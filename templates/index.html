@@ -1,0 +1,2076 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ratenza AI : Tableau de Bord RFM</title>
+    <!-- Google Fonts: Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --primary: #3b82f6;
+            --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 2rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* En-tête */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.5rem;
+        }
+
+        .logo-container h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-container p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-top: 0.2rem;
+        }
+
+        /* Bouton d'action */
+        .btn {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.25);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #cbd5e1;
+            color: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Cartes KPIs */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .kpi-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            border-color: #3b82f655;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--primary-gradient);
+        }
+
+        .kpi-title {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .kpi-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-top: 0.5rem;
+            letter-spacing: -1px;
+            color: var(--text-primary);
+        }
+
+        .kpi-subtext {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        /* Section Recherche et Filtre */
+        .controls-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .search-container {
+            position: relative;
+            flex-grow: 1;
+            max-width: 450px;
+        }
+
+        .search-input {
+            width: 100%;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.9rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+        }
+
+        /* Onglets de filtrage par Segment */
+        .filter-tabs {
+            display: flex;
+            gap: 0.35rem;
+            background-color: #e2e8f0;
+            padding: 0.3rem;
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 0.5rem 1.1rem;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            background-color: var(--card-bg);
+            color: var(--primary);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+        }
+
+        .count-badge {
+            background-color: var(--card-bg);
+            color: var(--text-primary);
+            padding: 0.5rem 0.9rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        /* Tableau */
+        .table-container {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            max-height: 600px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f8fafc;
+            padding: 1rem 1.25rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            border-bottom: 2px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 1rem 1.25rem;
+            font-size: 0.95rem;
+            border-bottom: 1px solid var(--border-color);
+            color: #334155;
+            white-space: nowrap;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: #f8fafc;
+        }
+
+        .client-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .client-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .client-email {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.1rem;
+        }
+
+        /* Badges de Segment */
+        .segment-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            padding: 0.25rem 0.65rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+        }
+
+        .seg-vip {
+            background-color: rgba(16, 185, 129, 0.12);
+            color: #065f46;
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+
+        .seg-regular {
+            background-color: rgba(59, 130, 246, 0.12);
+            color: #1e40af;
+            border: 1px solid rgba(59, 130, 246, 0.25);
+        }
+
+        .seg-at-risk {
+            background-color: rgba(245, 158, 11, 0.12);
+            color: #92400e;
+            border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+
+        .seg-lost {
+            background-color: rgba(239, 68, 68, 0.12);
+            color: #991b1b;
+            border: 1px solid rgba(239, 68, 68, 0.25);
+        }
+
+        /* Badges de Score */
+        .score-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            min-width: 50px;
+        }
+
+        .score-high {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: #059669;
+        }
+
+        .score-medium {
+            background-color: rgba(245, 158, 11, 0.15);
+            color: #d97706;
+        }
+
+        .score-low {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #dc2626;
+        }
+
+        /* Barre de progrès miniature */
+        .progress-bar-container {
+            width: 80px;
+            background-color: #e2e8f0;
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 0.5rem;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+        }
+
+        /* Overlay de chargement */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(59, 130, 246, 0.1);
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1.5rem;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Notifications */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transform: translateY(150%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+        }
+
+        .toast-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .toast-success .toast-icon {
+            background-color: var(--success);
+        }
+
+        .toast-error .toast-icon {
+            background-color: var(--danger);
+        }
+
+        /* Styles du Drawer Latéral (Détails Transactions) */
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.4);
+            display: none;
+            z-index: 998;
+            backdrop-filter: blur(4px);
+            transition: opacity 0.3s ease;
+        }
+
+        .drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 520px;
+            height: 100%;
+            background-color: var(--card-bg);
+            border-left: 1px solid var(--border-color);
+            box-shadow: -10px 0 35px rgba(0, 0, 0, 0.1);
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 999;
+            padding: 2.5rem 2rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .drawer.open {
+            transform: translateX(0);
+        }
+
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+
+        .drawer-title-container h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+        }
+
+        .drawer-title-container p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 0.2rem;
+        }
+
+        .btn-close-drawer {
+            background: #f1f5f9;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+
+        .btn-close-drawer:hover {
+            background: #e2e8f0;
+            color: var(--text-primary);
+        }
+
+        .drawer-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 0.25rem;
+        }
+
+        /* Styles pour l'historique des achats */
+        .drawer-section-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+            margin: 1.5rem 0 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tx-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .tx-card {
+            background-color: #f8fafc;
+            border: 1px solid var(--border-color);
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .tx-card:hover {
+            border-color: #3b82f644;
+            background-color: #f1f5f9;
+        }
+
+        .tx-left {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tx-id {
+            font-size: 0.75rem;
+            font-family: monospace;
+            color: var(--text-secondary);
+        }
+
+        .tx-date {
+            font-size: 0.92rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-top: 0.15rem;
+        }
+
+        .tx-right {
+            text-align: right;
+        }
+
+        .tx-amount-val {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .tx-empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Spinner dans le drawer */
+        .drawer-spinner-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 5rem 0;
+        }
+
+        /* Ligne des graphiques */
+        .charts-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .chart-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .chart-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(59, 130, 246, 0.4);
+            box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.08);
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        /* Micro-animations and Transitions */
+        .kpi-card, .btn, .tab-btn, tr, .progress-bar-fill {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.08);
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        /* === Styles Campagne Marketing === */
+        .campaign-form {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .campaign-template-btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .tpl-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.3rem 0.65rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+
+        .tpl-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .campaign-input {
+            width: 100%;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.6rem 0.85rem;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            outline: none;
+            margin-bottom: 0.6rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .campaign-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+        }
+
+        textarea.campaign-input {
+            resize: vertical;
+            min-height: 90px;
+        }
+
+        .btn-send-campaign {
+            width: 100%;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 0.7rem 1.2rem;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.92rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-send-campaign:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+        }
+
+        .btn-send-campaign:disabled {
+            background: #cbd5e1;
+            box-shadow: none;
+            transform: none;
+            cursor: not-allowed;
+        }
+
+        /* Carte historique campagne */
+        .campaign-history-card {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            margin-bottom: 0.6rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .campaign-history-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background: var(--primary-gradient);
+        }
+
+        .campaign-history-subject {
+            font-weight: 600;
+            font-size: 0.88rem;
+            color: var(--text-primary);
+        }
+
+        .campaign-history-date {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.2rem;
+        }
+
+        .campaign-history-body {
+            font-size: 0.82rem;
+            color: #64748b;
+            margin-top: 0.4rem;
+            line-height: 1.45;
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.4rem;
+        }
+
+        /* === Styles Actions Globales === */
+        .global-actions {
+            display: flex;
+            gap: 0.8rem;
+            align-items: center;
+        }
+
+        .btn-group-mail {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+        .btn-ai-auto {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            color: white;
+        }
+
+        /* Modal Envoi Groupé */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 16px;
+            width: 500px;
+            max-width: 90%;
+            padding: 2rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .modal-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.3rem;
+        }
+    </style>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- En-tête -->
+        <header>
+            <div class="logo-container">
+                <h1>Ratenza AI </h1>
+                <p>Analyse Comportementale Clients via l'indice RFM </p>
+            </div>
+            <div class="global-actions">
+                <button class="btn btn-group-mail" id="btn-group-mail" onclick="openGroupCampaignModal()">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                    </svg>
+                    Envoyer au Groupe Actuel
+                </button>
+                <button class="btn btn-ai-auto" id="btn-ai-auto" onclick="triggerSmartAutomation()">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+                    </svg>
+                    Automatisation IA
+                </button>
+                <button class="btn" id="btn-recalculate" onclick="recalculateRFM()">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99">
+                        </path>
+                    </svg>
+                    Mettre à Jour
+                </button>
+            </div>
+        </header>
+
+        <!-- Grille des indicateurs (KPIs) -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-title">Clients Analysés</div>
+                <div class="kpi-value" id="kpi-total-clients">-</div>
+                <div class="kpi-subtext">Total clients </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Récence Moyenne</div>
+                <div class="kpi-value" id="kpi-avg-recency">-</div>
+                <div class="kpi-subtext">Jours depuis le dernier achat</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Fréquence Moyenne</div>
+                <div class="kpi-value" id="kpi-avg-frequency">-</div>
+                <div class="kpi-subtext">Achats par client</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Panier Moyen Global</div>
+                <div class="kpi-value" id="kpi-avg-monetary">-</div>
+                <div class="kpi-subtext">Exprimé en Dinars Tunisiens (DT)</div>
+            </div>
+        </div>
+
+        <!-- Ligne des graphiques -->
+        <div class="charts-row">
+            <div class="chart-card">
+                <div class="chart-title">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.003 9.003 0 1020.945 13H11V3.055z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+                    </svg>
+                    Répartition des Segments Clients
+                </div>
+                <div class="chart-container">
+                    <canvas id="segmentChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    Scores RFM Moyens par Segment
+                </div>
+                <div class="chart-container">
+                    <canvas id="rfmRadarChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Contrôles (Recherche & Filtres) -->
+        <div class="controls-row">
+            <div class="search-container">
+                <svg class="search-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                <input type="text" class="search-input" id="search-input"
+                    placeholder="Rechercher un client par nom ou email..." oninput="handleFilterAndSearch()">
+            </div>
+
+            <div class="filter-tabs">
+                <button class="tab-btn active" onclick="filterSegment('all')">Tous</button>
+                <button class="tab-btn" onclick="filterSegment('vip')">VIP (Sa ≥ 0.7)</button>
+                <button class="tab-btn" onclick="filterSegment('regular')">Réguliers</button>
+                <button class="tab-btn" onclick="filterSegment('at_risk')">À risque</button>
+                <button class="tab-btn" onclick="filterSegment('lost')">Perdus</button>
+            </div>
+
+            <div class="count-badge">
+                <span id="filtered-count">0</span> / <span id="total-count">0</span> clients affichés
+            </div>
+        </div>
+
+        <!-- Conteneur du Tableau -->
+        <div class="table-container">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>Segment RFM</th>
+                            <th>Récence (Jours)</th>
+                            <th>Fréquence</th>
+                            <th>Montant Moyen (DT)</th>
+                            <th>Score Récence</th>
+                            <th>Score Fréquence</th>
+                            <th>Score Montant</th>
+                            <th>Score Global Sa</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Les lignes seront insérées dynamiquement en JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay de chargement -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loading-text">Mise à jour de l'analyse RFM depuis MongoDB...</div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast" id="toast">
+        <div class="toast-icon" id="toast-icon">✓</div>
+        <div class="toast-message" id="toast-message">Message</div>
+    </div>
+
+    <!-- Overlay & Drawer Latéral -->
+    <div class="drawer-overlay" id="drawer-overlay" onclick="closeClientDrawer()"></div>
+    <div class="drawer" id="drawer">
+        <div class="drawer-header">
+            <div class="drawer-title-container">
+                <h2 id="drawer-client-name">Nom du Client</h2>
+                <p id="drawer-client-email">email@exemple.com</p>
+            </div>
+            <button class="btn-close-drawer" onclick="closeClientDrawer()">×</button>
+        </div>
+        <div class="drawer-content">
+            <!-- Nouvelle section Probabilités -->
+            <div class="drawer-section-title" id="drawer-prob-title" style="display:none; margin-top: 0;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z"></path>
+                </svg>
+                Analyse Probabiliste GMM
+            </div>
+            <div id="drawer-prob-container" style="display:none; gap: 0.5rem; flex-direction: column; margin-bottom: 2rem;">
+            </div>
+
+            <!-- === SECTION ACTIONS MARKETING === -->
+            <div class="drawer-section-title" style="margin-top: 0.5rem;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                </svg>
+                Actions de Fidélisation
+            </div>
+            <div class="campaign-form">
+                <div class="campaign-template-btns" id="drawer-tpl-btns">
+                    <!-- Boutons de modèles chargés dynamiquement selon le segment -->
+                </div>
+                <input type="text" class="campaign-input" id="campaign-subject" placeholder="Sujet de l'e-mail...">
+                <textarea class="campaign-input" id="campaign-body" placeholder="Corps du message..."></textarea>
+                <button class="btn-send-campaign" id="btn-send-campaign" onclick="sendMarketingEmail()">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                    </svg>
+                    Envoyer l'E-mail de Campagne
+                </button>
+            </div>
+
+            <!-- === HISTORIQUE DES CAMPAGNES === -->
+            <div class="drawer-section-title">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Historique des Actions Marketing
+            </div>
+            <div id="drawer-campaign-history-container">
+                <!-- Chargé dynamiquement -->
+            </div>
+
+            <!-- === HISTORIQUE DES TRANSACTIONS === -->
+            <div class="drawer-section-title" style="margin-top:1.5rem;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z">
+                    </path>
+                </svg>
+                Historique des Transactions
+            </div>
+            <div id="drawer-transactions-container">
+                <!-- Chargé dynamiquement -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Envoi Groupé -->
+    <div class="modal" id="modal-group-campaign">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <div class="modal-title">Envoi de Campagne Groupée</div>
+                    <div class="modal-subtitle" id="modal-group-count">0 clients ciblés</div>
+                </div>
+                <button class="btn-close-drawer" onclick="closeGroupCampaignModal()">×</button>
+            </div>
+            <div class="campaign-form" style="margin-bottom:0; border:none; background:transparent; padding:0;">
+                <input type="text" class="campaign-input" id="group-campaign-subject" placeholder="Sujet de l'e-mail (utilisez {nom} pour personnaliser)...">
+                <textarea class="campaign-input" id="group-campaign-body" placeholder="Corps du message..." style="min-height: 150px;"></textarea>
+                <button class="btn-send-campaign" id="btn-send-group" onclick="sendGroupCampaign()">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                    </svg>
+                    Envoyer à tout le groupe
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Envoi Groupé -->
+    <div class="modal" id="modal-group-campaign">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <div class="modal-title">Envoi de Campagne Groupée</div>
+                    <div class="modal-subtitle" id="modal-group-count">0 clients ciblés</div>
+                </div>
+                <button class="btn-close-drawer" onclick="closeGroupCampaignModal()">×</button>
+            </div>
+            
+            <div class="campaign-form" style="margin-bottom:0; border:none; background:transparent; padding:0;">
+                <!-- Suggestions de modèles pour ce groupe -->
+                <div class="campaign-template-btns" id="group-tpl-btns" style="margin-bottom: 1rem;">
+                    <!-- Rempli dynamiquement -->
+                </div>
+                
+                <input type="text" class="campaign-input" id="group-campaign-subject" placeholder="Sujet de l'e-mail (utilisez {nom} pour personnaliser)...">
+                <textarea class="campaign-input" id="group-campaign-body" placeholder="Corps du message..." style="min-height: 150px;"></textarea>
+                <button class="btn-send-campaign" id="btn-send-group" onclick="sendGroupCampaign()">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                    </svg>
+                    Envoyer à tout le groupe
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allClients = [];
+
+        let filteredClients = [];
+        let currentSegment = 'all';
+
+        let segmentChart = null;
+        let rfmChart = null;
+
+        // Charger les données au démarrage
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            fetchData();
+        });
+
+        // Initialiser les graphiques Chart.js
+        function initCharts() {
+            const ctxSegment = document.getElementById('segmentChart').getContext('2d');
+            segmentChart = new Chart(ctxSegment, {
+                type: 'doughnut',
+                data: {
+                    labels: ['VIP', 'Régulier', 'À risque', 'Perdu'],
+                    datasets: [{
+                        data: [0, 0, 0, 0],
+                        backgroundColor: [
+                            '#10b981', // green
+                            '#3b82f6', // blue
+                            '#f59e0b', // orange
+                            '#ef4444'  // red
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    family: 'Outfit',
+                                    size: 12,
+                                    weight: '500'
+                                },
+                                color: '#0f172a'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return ` ${context.label}: ${value} client(s) (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+
+            const ctxRFM = document.getElementById('rfmRadarChart').getContext('2d');
+            rfmChart = new Chart(ctxRFM, {
+                type: 'bar',
+                data: {
+                    labels: ['VIP', 'Régulier', 'À risque', 'Perdu'],
+                    datasets: [
+                        {
+                            label: 'Score Récence (Moyen)',
+                            data: [0, 0, 0, 0],
+                            backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Score Fréquence (Moyen)',
+                            data: [0, 0, 0, 0],
+                            backgroundColor: 'rgba(59, 130, 246, 0.85)',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Score Montant (Moyen)',
+                            data: [0, 0, 0, 0],
+                            backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    family: 'Outfit',
+                                    weight: '600'
+                                },
+                                color: '#0f172a'
+                            }
+                        },
+                        y: {
+                            min: 0,
+                            max: 1.0,
+                            ticks: {
+                                stepSize: 0.2,
+                                font: {
+                                    family: 'Outfit'
+                                },
+                                color: '#64748b'
+                            },
+                            grid: {
+                                color: 'rgba(226, 232, 240, 0.5)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    family: 'Outfit',
+                                    size: 11
+                                },
+                                color: '#0f172a'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Mettre à jour les données des graphiques
+        function updateCharts(data) {
+            if (!segmentChart || !rfmChart) return;
+
+            let vipCount = 0, regularCount = 0, atRiskCount = 0, lostCount = 0;
+            let vipRFM = { r: 0, f: 0, m: 0, count: 0 };
+            let regularRFM = { r: 0, f: 0, m: 0, count: 0 };
+            let atRiskRFM = { r: 0, f: 0, m: 0, count: 0 };
+            let lostRFM = { r: 0, f: 0, m: 0, count: 0 };
+
+            data.forEach(client => {
+                const scoreSa = client.score_global_sa;
+                const scoreR = client.recency_score || 0;
+                const scoreF = client.frequency_score || 0;
+                const scoreM = client.monetary_score || 0;
+                
+                const segment = getClientSegment(client);
+                if (segment.key === 'vip') {
+                    vipCount++;
+                    vipRFM.r += scoreR;
+                    vipRFM.f += scoreF;
+                    vipRFM.m += scoreM;
+                    vipRFM.count++;
+                } else if (segment.key === 'regular') {
+                    regularCount++;
+                    regularRFM.r += scoreR;
+                    regularRFM.f += scoreF;
+                    regularRFM.m += scoreM;
+                    regularRFM.count++;
+                } else if (segment.key === 'at_risk') {
+                    atRiskCount++;
+                    atRiskRFM.r += scoreR;
+                    atRiskRFM.f += scoreF;
+                    atRiskRFM.m += scoreM;
+                    atRiskRFM.count++;
+                } else {
+                    lostCount++;
+                    lostRFM.r += scoreR;
+                    lostRFM.f += scoreF;
+                    lostRFM.m += scoreM;
+                    lostRFM.count++;
+                }
+            });
+
+            segmentChart.data.datasets[0].data = [vipCount, regularCount, atRiskCount, lostCount];
+            segmentChart.update();
+
+            const getAvg = (sum, count) => count > 0 ? sum / count : 0;
+
+            rfmChart.data.datasets[0].data = [
+                getAvg(vipRFM.r, vipRFM.count),
+                getAvg(regularRFM.r, regularRFM.count),
+                getAvg(atRiskRFM.r, atRiskRFM.count),
+                getAvg(lostRFM.r, lostRFM.count)
+            ];
+
+            rfmChart.data.datasets[1].data = [
+                getAvg(vipRFM.f, vipRFM.count),
+                getAvg(regularRFM.f, regularRFM.count),
+                getAvg(atRiskRFM.f, atRiskRFM.count),
+                getAvg(lostRFM.f, lostRFM.count)
+            ];
+
+            rfmChart.data.datasets[2].data = [
+                getAvg(vipRFM.m, vipRFM.count),
+                getAvg(regularRFM.m, regularRFM.count),
+                getAvg(atRiskRFM.m, atRiskRFM.count),
+                getAvg(lostRFM.m, lostRFM.count)
+            ];
+
+            rfmChart.update();
+        }
+
+        // Fonction pour récupérer les données depuis l'API Flask
+        function fetchData() {
+            fetch('/api/data')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        showToast(data.error, 'error');
+                        return;
+                    }
+                    allClients = data;
+                    calculateKPIs(data);
+                    handleFilterAndSearch();
+
+                    document.getElementById('total-count').innerText = allClients.length;
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    showToast('Erreur de connexion avec le serveur web.', 'error');
+                });
+        }
+
+        // Calculer dynamiquement les KPIs basés sur les données MongoDB
+        function calculateKPIs(data) {
+            if (!data || data.length === 0) return;
+
+            const total = data.length;
+            const avgRecency = data.reduce((acc, curr) => acc + curr.recency, 0) / total;
+            const avgFrequency = data.reduce((acc, curr) => acc + curr.frequency, 0) / total;
+            const avgMonetary = data.reduce((acc, curr) => acc + curr.monetary, 0) / total;
+
+            document.getElementById('kpi-total-clients').innerText = total;
+            document.getElementById('kpi-avg-recency').innerText = avgRecency.toFixed(1) + ' j';
+            document.getElementById('kpi-avg-frequency').innerText = avgFrequency.toFixed(1) + ' achats';
+            document.getElementById('kpi-avg-monetary').innerText = avgMonetary.toFixed(2) + ' DT';
+        }
+
+        // Déterminer la catégorie de segment basée sur le modèle GMM (ou fallback Sa)
+        function getClientSegment(client) {
+            let key = client.segment_gmm;
+            
+            // Fallback si GMM non calculé (ancienne donnée)
+            if (!key) {
+                const scoreSa = client.score_global_sa || 0;
+                if (scoreSa >= 0.7) key = 'vip';
+                else if (scoreSa >= 0.4) key = 'regular';
+                else if (scoreSa >= 0.2) key = 'at_risk';
+                else key = 'lost';
+            }
+            
+            if (key === 'vip') return { key: 'vip', label: 'VIP', class: 'seg-vip' };
+            if (key === 'regular') return { key: 'regular', label: 'Régulier', class: 'seg-regular' };
+            if (key === 'at_risk') return { key: 'at_risk', label: 'À risque', class: 'seg-at-risk' };
+            return { key: 'lost', label: 'Perdu', class: 'seg-lost' };
+        }
+
+        // Générer le tableau HTML
+        function renderTable(data) {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-secondary); padding: 2.5rem; font-weight: 500;">Aucun client trouvé pour ce filtre.</td></tr>`;
+                return;
+            }
+
+            data.forEach(client => {
+                const tr = document.createElement('tr');
+                tr.style.cursor = 'pointer';
+                tr.onclick = () => openClientDrawer(client.client_db_id || client.email, client.nom, client.email);
+                const scoreR = client.recency_score;
+                const scoreF = client.frequency_score;
+                const scoreM = client.monetary_score;
+                const scoreSa = client.score_global_sa;
+                const segment = getClientSegment(client);
+                
+                // Formater la probabilité GMM si disponible
+                const probaStr = client.probability_gmm ? 
+                    `<div style="font-size:0.75rem; color:var(--text-secondary); margin-top:4px; font-weight:500;">
+                        Confiance: ${(client.probability_gmm * 100).toFixed(1)}%
+                    </div>` : '';
+
+                tr.innerHTML = `
+                    <td>
+                        <div class="client-info">
+                            <span class="client-name">${client.nom}</span>
+                            <span class="client-email">${client.email}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                            <span class="segment-badge ${segment.class}">${segment.label}</span>
+                            ${probaStr}
+                        </div>
+                    </td>
+                    <td><strong>${client.recency}</strong> jours</td>
+                    <td><strong>${client.frequency}</strong> achats</td>
+                    <td><strong style="color: var(--primary);">${client.monetary.toFixed(2)} DT</strong></td>
+                    <td>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" style="width: ${scoreR * 100}%; background-color: ${getColorForScore(scoreR)};"></div>
+                        </div>
+                        <span style="font-size: 0.85rem; color: ${getColorForScore(scoreR)}; font-weight: 600;">${scoreR.toFixed(2)}</span>
+                    </td>
+                    <td>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" style="width: ${scoreF * 100}%; background-color: ${getColorForScore(scoreF)};"></div>
+                        </div>
+                        <span style="font-size: 0.85rem; color: ${getColorForScore(scoreF)}; font-weight: 600;">${scoreF.toFixed(2)}</span>
+                    </td>
+                    <td>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" style="width: ${scoreM * 100}%; background-color: ${getColorForScore(scoreM)};"></div>
+                        </div>
+                        <span style="font-size: 0.85rem; color: ${getColorForScore(scoreM)}; font-weight: 600;">${scoreM.toFixed(2)}</span>
+                    </td>
+                    <td>
+                        <span class="score-badge ${getBadgeClass(scoreSa)}">${scoreSa.toFixed(3)}</span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Gérer le filtrage et la recherche combinés
+        function handleFilterAndSearch() {
+            const query = document.getElementById('search-input').value.toLowerCase().trim();
+
+            filteredClients = allClients.filter(c => {
+                // Recherche par nom ou email
+                const matchesSearch = c.nom.toLowerCase().includes(query) || c.email.toLowerCase().includes(query);
+
+                // Filtrage par segment
+                const segmentKey = getClientSegment(c).key;
+                const matchesSegment = currentSegment === 'all' || segmentKey === currentSegment;
+
+                return matchesSearch && matchesSegment;
+            });
+
+            renderTable(filteredClients);
+            updateCharts(filteredClients);
+            document.getElementById('filtered-count').innerText = filteredClients.length;
+        }
+
+        // Changer d'onglet de segment
+        function filterSegment(segmentKey) {
+            currentSegment = segmentKey;
+
+            // Mettre à jour l'apparence des onglets
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            handleFilterAndSearch();
+        }
+
+        // Recalculer le RFM en envoyant la requête POST
+        function recalculateRFM() {
+            const overlay = document.getElementById('loading-overlay');
+            const btn = document.getElementById('btn-recalculate');
+
+            overlay.style.display = 'flex';
+            btn.disabled = true;
+
+            fetch('/api/recalculate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ commerce_id: 'commerce_local_1' })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    overlay.style.display = 'none';
+                    btn.disabled = false;
+                    if (data.status === 'success') {
+                        showToast(data.message, 'success');
+                        fetchData(); // Recharger les données depuis MongoDB
+                    } else {
+                        showToast(data.error || 'Erreur lors du recalcul.', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                    overlay.style.display = 'none';
+                    btn.disabled = false;
+                    showToast('Erreur de connexion réseau lors du recalcul.', 'error');
+                });
+        }
+
+        // Helpers de style
+        function getColorForScore(score) {
+            if (score >= 0.7) return 'var(--success)';
+            if (score >= 0.4) return 'var(--warning)';
+            return 'var(--danger)';
+        }
+
+        function getBadgeClass(score) {
+            if (score >= 0.7) return 'score-high';
+            if (score >= 0.4) return 'score-medium';
+            return 'score-low';
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+
+            toast.className = 'toast';
+            toast.classList.add(type === 'success' ? 'toast-success' : 'toast-error');
+            icon.innerText = type === 'success' ? '✓' : '✗';
+
+            document.getElementById('toast-message').innerText = message;
+
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
+        // Ouvrir le drawer et charger les transactions
+        function openClientDrawer(id, name, email) {
+            document.getElementById('drawer-client-name').innerText = name;
+            document.getElementById('drawer-client-email').innerText = email;
+
+            // Stocker les infos du client courant pour les fonctions de campagne
+            currentDrawerId    = id;
+            currentDrawerName  = name;
+            currentDrawerEmail = email;
+
+            // Afficher les probabilités GMM si disponibles
+            const client = allClients.find(c => c.client_db_id === id || c.email === email);
+            const probTitle = document.getElementById('drawer-prob-title');
+            const probContainer = document.getElementById('drawer-prob-container');
+            
+            // Le backend renvoie probability_gmm comme dict s'il est unique, ou on prend le premier élément s'il est dans un tableau
+            let probs = {};
+            if (client && client.probabilities_gmm) {
+                probs = client.probabilities_gmm;
+                if (Array.isArray(probs)) probs = probs[0] || probs;
+                
+                if (typeof probs === 'object' && Object.keys(probs).length > 0) {
+                    probTitle.style.display = 'flex';
+                    probContainer.style.display = 'flex';
+                    
+                    const probMap = {
+                        'vip': { label: 'VIP', color: 'var(--success)' },
+                        'regular': { label: 'Régulier', color: '#3b82f6' },
+                        'at_risk': { label: 'À risque', color: 'var(--warning)' },
+                        'lost': { label: 'Perdu', color: 'var(--danger)' }
+                    };
+                    
+                    let html = '';
+                    // Trier les probabilités de la plus haute à la plus basse
+                    const sortedProbs = Object.entries(probs).sort((a, b) => b[1] - a[1]);
+                    
+                    sortedProbs.forEach(([key, val]) => {
+                        const percent = (val * 100).toFixed(1);
+                        // N'afficher que les probabilités > 0% pour ne pas surcharger visuellement
+                        if (percent > 0) {
+                            html += `
+                                <div style="display:flex; align-items:center; justify-content:space-between; background:#f8fafc; padding:0.75rem 1rem; border-radius:8px; border:1px solid var(--border-color);">
+                                    <span style="font-weight:600; font-size:0.9rem; color:var(--text-primary);">${probMap[key] ? probMap[key].label : key}</span>
+                                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                                        <div style="width:100px; height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden;">
+                                            <div style="width:${percent}%; height:100%; background:${probMap[key] ? probMap[key].color : '#ccc'};"></div>
+                                        </div>
+                                        <span style="font-weight:700; font-size:0.9rem; color:${probMap[key] ? probMap[key].color : '#333'}; min-width:45px; text-align:right;">${percent}%</span>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+                    probContainer.innerHTML = html;
+                } else {
+                    probTitle.style.display = 'none';
+                    probContainer.style.display = 'none';
+                }
+            } else {
+                probTitle.style.display = 'none';
+                probContainer.style.display = 'none';
+            }
+
+            const overlay = document.getElementById('drawer-overlay');
+            const drawer = document.getElementById('drawer');
+
+            overlay.style.display = 'block';
+            setTimeout(() => {
+                drawer.classList.add('open');
+            }, 10);
+
+            // Charger les modèles d'e-mails selon les probabilités GMM du client
+            loadCampaignTemplates(probs, name);
+
+            // Charger l'historique des campagnes
+            loadCampaignHistory(email);
+
+            // État de chargement
+            const container = document.getElementById('drawer-transactions-container');
+            container.innerHTML = `
+                <div class="drawer-spinner-container">
+                    <div class="spinner" style="width: 40px; height: 40px; border-width: 4px;"></div>
+                    <span style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 1rem;">Chargement des achats...</span>
+                </div>
+            `;
+
+            // Appel API REST
+            fetch(`/api/transactions/${encodeURIComponent(id)}`)
+                .then(res => res.json())
+                .then(txs => {
+                    if (txs.error) {
+                        container.innerHTML = `<div class="tx-empty-state">Erreur : ${txs.error}</div>`;
+                        return;
+                    }
+                    renderTransactions(txs);
+                })
+                .catch(err => {
+                    console.error(err);
+                    container.innerHTML = `<div class="tx-empty-state">Impossible de charger les transactions.</div>`;
+                });
+        }
+
+        // Fermer le drawer
+        function closeClientDrawer() {
+            const drawer = document.getElementById('drawer');
+            const overlay = document.getElementById('drawer-overlay');
+
+            drawer.classList.remove('open');
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 300);
+        }
+
+        // Afficher les transactions dans le drawer
+        function renderTransactions(txs) {
+            const container = document.getElementById('drawer-transactions-container');
+            container.innerHTML = '';
+
+            if (!txs || txs.length === 0) {
+                container.innerHTML = `<div class="tx-empty-state">Aucun achat enregistré pour ce client.</div>`;
+                return;
+            }
+
+            const listDiv = document.createElement('div');
+            listDiv.className = 'tx-list';
+
+            txs.forEach(tx => {
+                const card = document.createElement('div');
+                card.className = 'tx-card';
+
+                // Formater la date en français propre
+                const dateObj = new Date(tx.date_transaction);
+                const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+                const formattedDate = dateObj.toLocaleDateString('fr-FR', options);
+
+                card.innerHTML = `
+                    <div class="tx-left">
+                        <span class="tx-id">Réf: ${tx._id || 'N/A'}</span>
+                        <span class="tx-date">${formattedDate}</span>
+                    </div>
+                    <div class="tx-right">
+                        <span class="tx-amount-val">${tx.montant.toFixed(2)} DT</span>
+                    </div>
+                `;
+                listDiv.appendChild(card);
+            });
+
+            container.appendChild(listDiv);
+        }
+
+        // ==============================================================
+        // CAMPAGNES MARKETING
+        // ==============================================================
+
+        // Templates prédéfinis selon le segment
+        const campaignTemplates = {
+            vip: [
+                {
+                    label: '🌟 Offre Exclusive VIP',
+                    subject: 'Merci pour votre fidélité, {nom} !',
+                    body: 'Bonjour {nom},\n\nEn tant que client VIP, nous avons une offre exclusive pour vous : accès en avant-première à nos nouvelles collections.\n\nMerci pour votre confiance.\n\nL\'équipe Ratenza'
+                },
+                {
+                    label: '🎁 Cadeau Anniversaire',
+                    subject: 'Un cadeau spécial pour vous, {nom} !',
+                    body: 'Bonjour {nom},\n\nPour vous remercier de votre fidélité exceptionnelle, bénéficiez d\'une réduction de 20% sur votre prochain achat avec le code : VIP20.\n\nBonne shopping !'
+                }
+            ],
+            regular: [
+                {
+                    label: '💡 Encourager à revenir',
+                    subject: 'Nos nouveautés vous attendent, {nom} !',
+                    body: 'Bonjour {nom},\n\nDe nouveaux produits viennent d\'arriver ! Venez découvrir notre sélection qui pourrait vous plaire.\n\nà très bientôt !'
+                },
+                {
+                    label: '🔔 Rappel de Promotion',
+                    subject: 'Une promotion rien que pour vous, {nom}',
+                    body: 'Bonjour {nom},\n\nProfitez de 10% de réduction sur votre prochain achat avec le code : MERCI10. Offre valable 7 jours.'
+                }
+            ],
+            at_risk: [
+                {
+                    label: '🚨 Récupérer le client',
+                    subject: 'Vous nous manquez, {nom} !',
+                    body: 'Bonjour {nom},\n\nCela fait un moment que nous ne vous avons pas vu ! Pour fêter votre retour, bénéficiez de 15% de réduction avec le code : REVIENS15.\n\nHâtez-vous, l\'offre est limitée !'
+                },
+                {
+                    label: '🎯 Sondage Satisfaction',
+                    subject: 'Votre avis compte pour nous, {nom}',
+                    body: 'Bonjour {nom},\n\nNous souhaitons améliorer notre service. Auriez-vous 2 minutes pour nous donner votre avis ?\n\nEn retour, recevez un bon de réduction de 10%.'
+                }
+            ],
+            lost: [
+                {
+                    label: '❤️ Reconquérir le client',
+                    subject: 'Une offre spéciale pour votre retour, {nom}',
+                    body: 'Bonjour {nom},\n\nNous espérons que tout va bien ! Pour marquer votre retour, bénéficiez d\'une remise exceptionnelle de 25% avec le code : RETOUR25.\n\nNous serons ravis de vous revoir !'
+                }
+            ]
+        };
+
+        // Variable globale pour l'e-mail du client courant
+        let currentDrawerEmail = '';
+        let currentDrawerName = '';
+        let currentDrawerId = '';
+
+        // Variable globale pour stocker les templates dynamiques générés
+        let dynamicTemplates = [];
+
+        // Charger les modèles selon les probabilités GMM
+        function loadCampaignTemplates(probs, clientName) {
+            const tplContainer = document.getElementById('drawer-tpl-btns');
+            dynamicTemplates = []; // Réinitialiser
+
+            // Si pas de probabilités valides, on charge 'regular' par défaut
+            if (!probs || typeof probs !== 'object' || Object.keys(probs).length === 0) {
+                dynamicTemplates = [...campaignTemplates['regular']];
+            } else {
+                // Trier les probabilités de manière décroissante
+                const sortedProbs = Object.entries(probs).sort((a, b) => b[1] - a[1]);
+                
+                // Récupérer les segments "significatifs" (probabilité > 15%)
+                const significantSegments = sortedProbs.filter(([key, val]) => val > 0.15).map(arr => arr[0]);
+                
+                if (significantSegments.length === 0) {
+                    significantSegments.push(sortedProbs[0][0] || 'regular');
+                }
+
+                // Ajouter le 1er template de chaque segment significatif pour avoir un mélange varié
+                significantSegments.forEach(seg => {
+                    if (campaignTemplates[seg] && campaignTemplates[seg].length > 0) {
+                        dynamicTemplates.push(campaignTemplates[seg][0]);
+                    }
+                });
+
+                // === REGLES HYBRIDES INTELLIGENTES ===
+                const pVip = probs['vip'] || 0;
+                const pRisk = (probs['at_risk'] || 0) + (probs['lost'] || 0);
+                
+                // Si le client est partagé entre VIP et Risque/Perdu (Un VIP qui part)
+                if (pVip > 0.25 && pRisk > 0.25) {
+                    dynamicTemplates.unshift({
+                        label: '🌟🚨 VIP en danger !',
+                        subject: 'Une offre exceptionnelle pour vous retenir, {nom}',
+                        body: 'Bonjour {nom},\n\nVous êtes l\'un de nos clients les plus précieux, mais nous avons remarqué que vous vous faisiez rare !\n\nPour vous remercier de votre fidélité historique, voici une remise exceptionnelle de 30% avec le code : VIPRETOUR30.\n\nÀ très vite !'
+                    });
+                }
+            }
+
+            tplContainer.innerHTML = dynamicTemplates.map((tpl, i) => `
+                <button class="tpl-btn" onclick="applyTemplate(${i}, '${clientName.replace(/'/g, '\\\'')}')">${tpl.label}</button>
+            `).join('');
+
+            // Vider le formulaire
+            document.getElementById('campaign-subject').value = '';
+            document.getElementById('campaign-body').value = '';
+        }
+
+        // Appliquer un modèle au formulaire
+        function applyTemplate(index, clientName) {
+            const tpl = dynamicTemplates[index];
+            if (!tpl) return;
+
+            document.getElementById('campaign-subject').value = tpl.subject.replace(/{nom}/g, clientName);
+            document.getElementById('campaign-body').value = tpl.body.replace(/{nom}/g, clientName);
+        }
+
+        // Envoyer l'e-mail de campagne
+        function sendMarketingEmail() {
+            const subject = document.getElementById('campaign-subject').value.trim();
+            const body    = document.getElementById('campaign-body').value.trim();
+            const btn     = document.getElementById('btn-send-campaign');
+
+            if (!subject || !body) {
+                showToast('Veuillez remplir le sujet et le corps du message.', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = `<div class="spinner" style="width:18px;height:18px;border-width:3px;"></div> Envoi en cours...`;
+
+            const client = allClients.find(c => c.client_db_id === currentDrawerId || c.email === currentDrawerEmail);
+            const segment = client ? (client.segment_gmm || 'unknown') : 'unknown';
+
+            fetch('/api/campaigns/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email      : currentDrawerEmail,
+                    nom        : currentDrawerName,
+                    subject,
+                    body,
+                    segment,
+                    commerce_id: 'commerce_local_1'
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg> Envoyer l'E-mail de Campagne`;
+                    if (data.status === 'success') {
+                        showToast('E-mail de campagne envoyé et enregistré !', 'success');
+                        document.getElementById('campaign-subject').value = '';
+                        document.getElementById('campaign-body').value = '';
+                        loadCampaignHistory(currentDrawerEmail); // Rafraîchir l'historique
+                    } else {
+                        showToast(data.error || 'Erreur lors de l\'envoi.', 'error');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    btn.disabled = false;
+                    btn.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg> Envoyer l'E-mail de Campagne`;
+                    showToast('Erreur réseau lors de l\'envoi.', 'error');
+                });
+        }
+
+        // Charger l'historique des campagnes envoyées au client
+        function loadCampaignHistory(email) {
+            const container = document.getElementById('drawer-campaign-history-container');
+            container.innerHTML = `<div style="font-size:0.85rem; color:var(--text-secondary); padding:0.5rem 0;">Chargement...</div>`;
+
+            fetch(`/api/campaigns/history/${encodeURIComponent(email)}`)
+                .then(res => res.json())
+                .then(history => renderCampaignHistory(history))
+                .catch(() => {
+                    container.innerHTML = `<div class="tx-empty-state">Impossible de charger l'historique.</div>`;
+                });
+        }
+
+        // Afficher l'historique des campagnes
+        function renderCampaignHistory(history) {
+            const container = document.getElementById('drawer-campaign-history-container');
+            container.innerHTML = '';
+
+            if (!history || history.length === 0) {
+                container.innerHTML = `<div class="tx-empty-state" style="padding: 1rem 0;">Aucune campagne envoyée pour ce client.</div>`;
+                return;
+            }
+
+            history.forEach(h => {
+                const dateStr = new Date(h.sent_at).toLocaleDateString('fr-FR', {
+                    year: 'numeric', month: 'long', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                });
+                const card = document.createElement('div');
+                card.className = 'campaign-history-card';
+                card.innerHTML = `
+                    <div class="campaign-history-subject">${h.subject}</div>
+                    <div class="campaign-history-date">Envoyé le ${dateStr}</div>
+                    <div class="campaign-history-body">${h.body.replace(/\n/g, '<br>')}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // ==============================================================
+        // ACTIONS GLOBALES (BATCH & AUTO)
+        // ==============================================================
+
+        function openGroupCampaignModal() {
+            // Utiliser filteredClients (qui contient les clients actuellement affichés)
+            const count = filteredClients.length;
+            if (count === 0) {
+                showToast('Aucun client dans ce groupe.', 'error');
+                return;
+            }
+            
+            document.getElementById('modal-group-count').innerText = `${count} client(s) ciblé(s) dans ce segment`;
+            document.getElementById('group-campaign-subject').value = '';
+            document.getElementById('group-campaign-body').value = '';
+            
+            // --- NOUVEAU : Ajouter les suggestions de modèles pour le groupe ---
+            const groupTplContainer = document.getElementById('group-tpl-btns');
+            // Si le segment est "all", on utilise les templates 'regular' par défaut
+            const segForTpl = currentSegment === 'all' ? 'regular' : currentSegment;
+            const templates = campaignTemplates[segForTpl] || campaignTemplates['regular'];
+
+            groupTplContainer.innerHTML = templates.map((tpl, i) => `
+                <button class="tpl-btn" onclick="applyGroupTemplate(${i}, '${segForTpl}')">${tpl.label}</button>
+            `).join('');
+            
+            document.getElementById('modal-group-campaign').style.display = 'flex';
+        }
+
+        // Appliquer un modèle au formulaire groupé
+        function applyGroupTemplate(index, segment) {
+            const templates = campaignTemplates[segment] || campaignTemplates['regular'];
+            const tpl = templates[index];
+            if (!tpl) return;
+
+            document.getElementById('group-campaign-subject').value = tpl.subject;
+            document.getElementById('group-campaign-body').value = tpl.body;
+        }
+
+        function closeGroupCampaignModal() {
+            document.getElementById('modal-group-campaign').style.display = 'none';
+        }
+
+        function sendGroupCampaign() {
+            const subject = document.getElementById('group-campaign-subject').value.trim();
+            const body = document.getElementById('group-campaign-body').value.trim();
+            const btn = document.getElementById('btn-send-group');
+
+            if (!subject || !body) {
+                showToast('Veuillez remplir le sujet et le corps du message.', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = `<div class="spinner" style="width:18px;height:18px;border-width:3px; border-color:#fff transparent transparent transparent;"></div> Envoi groupé en cours...`;
+
+            // Préparer le tableau des clients
+            const clientsToSend = filteredClients.map(c => ({
+                email: c.email || c.client_db_id,
+                nom: c.client_db_id, // Pour Ratenza, l'ID sert de nom temporaire
+                segment: c.segment_gmm || 'unknown'
+            }));
+
+            fetch('/api/campaigns/send-group', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    clients: clientsToSend,
+                    subject,
+                    body,
+                    commerce_id: 'commerce_local_1'
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg> Envoyer à tout le groupe`;
+                
+                if (data.status === 'success') {
+                    showToast(data.message, 'success');
+                    closeGroupCampaignModal();
+                } else {
+                    showToast(data.error || 'Erreur lors de l\'envoi groupé.', 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                btn.disabled = false;
+                btn.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg> Envoyer à tout le groupe`;
+                showToast('Erreur réseau.', 'error');
+            });
+        }
+
+        function triggerSmartAutomation() {
+            const btn = document.getElementById('btn-ai-auto');
+            
+            // Demander confirmation
+            if (!confirm("Voulez-vous lancer l'Automatisation Intelligente ? Le système va analyser tous les clients et leur envoyer un e-mail sur-mesure automatiquement.")) {
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = `<div class="spinner" style="width:16px;height:16px;border-width:2px; border-color:#fff transparent transparent transparent;"></div> IA en cours...`;
+
+            fetch('/api/campaigns/trigger-automation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ commerce_id: 'commerce_local_1' })
+            })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" /></svg> Automatisation IA`;
+                
+                if (data.status === 'success') {
+                    const s = data.stats;
+                    const msg = `${data.message}\nVIP Sauvés: ${s.vip_danger} | VIP pur: ${s.vip} | Risque: ${s.at_risk} | Réguliers: ${s.regular} | Perdus: ${s.lost}`;
+                    showToast(data.message, 'success');
+                    // Alerte détaillée
+                    setTimeout(() => alert(msg), 500);
+                } else {
+                    showToast(data.error || 'Erreur lors de l\'automatisation.', 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                btn.disabled = false;
+                btn.innerHTML = `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" /></svg> Automatisation IA`;
+                showToast('Erreur réseau.', 'error');
+            });
+        }
+    </script>
+</body>
+</html>
