@@ -1,6 +1,7 @@
 import json
 import re
 import random
+from difflib import SequenceMatcher
 from datetime import datetime
 from pymongo import MongoClient
 import chatbot_config as config
@@ -118,6 +119,25 @@ def normalize_text(text):
     # Minuscules et suppression d'accents
     text = unicodedata.normalize('NFD', text.lower())
     text = ''.join(c for c in text if unicodedata.category(c) != 'Mn')
+    text = re.sub(r"[^\w\s%'-]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    
+    # Expressions multi-mots avant les remplacements mot a mot.
+    phrase_replacements = {
+        r"\bchnou+a\s+a?hwel+k\b": "comment tu vas",
+        r"\bkif\s+halek\b": "comment tu vas",
+        r"\bkifech\s+halek\b": "comment tu vas",
+        r"\bca\s+roule\b": "ca roule",
+        r"\bcette\s*platforme\b": "cette plateforme",
+        r"\bcette\s*plateforme\b": "cette plateforme",
+        r"\btt\s+va\b": "tout va",
+        r"\bt\s+va\b": "tout va",
+        r"\bj\s*'?ai\s+pas\s+recu\b": "pas recu",
+        r"\bma\s+pas\s+recu\b": "pas recu",
+        r"\bprobleme\s+avec\b": "probleme avec",
+    }
+    for pattern, repl in phrase_replacements.items():
+        text = re.sub(pattern, repl, text)
     
     # Remplacements courants
     replacements = {
@@ -127,6 +147,13 @@ def normalize_text(text):
         r"\bsava\b": "ca va",
         r"\bca vas\b": "ca va",
         r"\bkoi\b": "quoi",
+        r"\bqupi\b": "quoi",
+        r"\bplatforme\b": "plateforme",
+        r"\bplateform\b": "plateforme",
+        r"\bhelo+\b": "hello",
+        r"\bhi+\b": "hello",
+        r"\bhii+\b": "hello",
+        r"\btt\b": "tout",
         r"\bj veux\b": "je veux",
         r"\bveu\b": "veux",
         r"\bfair\b": "faire",
@@ -141,6 +168,7 @@ def normalize_text(text):
         r"\bstp\b": "s'il te plait",
         # Dialecte Tunisien Franco-Arabe
         r"\bchnowa\b": "quoi",
+        r"\bchnoua\b": "quoi",
         r"\bchneya\b": "quoi",
         r"\bkifech\b": "comment",
         r"\bnheb\b": "je veux",
@@ -171,7 +199,8 @@ def normalize_text(text):
     for pattern, repl in replacements.items():
         text = re.sub(pattern, repl, text)
     
-    return text.strip()
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
 
 
 # =====================================================================
@@ -184,11 +213,12 @@ _BUSINESS_SIGNALS = [
     "retour", "retourner", "renvoyer", "rembourse", "remboursement", "rembourser",
     "casse", "defectueux", "abime", "brise", "endommage", "ne marche pas",
     "ne fonctionne pas", "marche pas", "fonctionne pas", "pas bon", "probleme",
-    "insatisfait", "decu", "mecontent", "scandaleux", "inacceptable",
+    "insatisfait", "decu", "mecontent", "scandaleux", "inacceptable", "souci",
     "reclamation", "plainte", "sav",
     # Commandes / livraisons
-    "commande", "livraison", "colis", "expedie", "livre", "tracking", "suivi",
-    "ou est", "quand arrive", "delai",
+    "commande", "livraison", "colis", "paquet", "pacquet", "expedie", "livre",
+    "tracking", "suivi", "recu", "retard", "arrive",
+    "ou est", "quand arrive", "delai", "plateforme",
     # Programme Retenza / fidélité
     "retenza", "parrainage", "parrain", "filleul", "inviter", "invitation",
     "reduction", "promo", "promotion", "offre", "20%", "-20", "gagner",
@@ -198,15 +228,28 @@ _BUSINESS_SIGNALS = [
     "soin", "creme", "parfum", "hydratant",
 ]
 
+_BUSINESS_SIGNAL_PHRASES = [
+    "ne marche pas", "ne fonctionne pas", "marche pas", "fonctionne pas",
+    "pas bon", "ou est", "quand arrive", "code ami", "j'ai un probleme",
+    "probleme avec", "pas recu", "pas arrive", "colis pas", "paquet pas",
+    "quoi faire toi", "tu est pourquoi", "tu es pourquoi", "tu es la pourquoi",
+]
+
+_GENERAL_INTENTS = {"Salutation", "Remerciement", "Autre", "Aide generale"}
+_BUSINESS_INTENTS = {
+    "Plainte SAV", "Retour", "Remboursement", "Parrainage", "Ambassadeur",
+    "Retenza", "Livraison", "Commande", "Promotions", "Produits", "Assistance"
+}
+
 # Patterns regex pour les messages de type purement conversationnel/social
 _SOCIAL_PATTERNS = [
     # Salutations courtes (avec ou sans extension de lettres)
-    r"^(sal+ut+|bonjour+|bonsoir+|hello+|hi+|hey+|hola+|ola+|coucou+|salam+)\s*[!?.:,]*$",
+    r"^(sal+ut+|bonjour+|bonsoir+|hello+|hi+|hey+|hola+|ola+|coucou+|salam+)(\s+(chatbot|chatchout|bot|assistant))?\s*[!?.:,]*$",
     # Abréviations SMS de salutation
     r"^(bjr+|slt+|bsr+|cc+)\s*[!?.:,]*$",
     # Etats, humeurs courtes
     r"^(ca\s+va|cv|sava|labes|la\s+bes|bien|bof|bien\s+merci|tres\s+bien)\s*[!?.:,]*$",
-    r"^(ca\s+roule|nickel|impeccable|parfait|cool+|super+|top+|bonne\s+journee)\s*[!?.:,]*$",
+    r"^(tout\s+va\s+bien|ca\s+roule|nickel|impeccable|parfait|cool+|super+|top+|bonne\s+journee)\s*[!?.:,]*$",
     # Remerciements purs
     r"^(merci+|thx+|ok+|oui+|non+|d'accord)\s*(beaucoup|bcp|bien|tellement)?\s*[!?.:,]*$",
     # Combinaisons sociales courtes (cv sava, slt cv, etc.)
@@ -222,10 +265,107 @@ _SOCIAL_PATTERNS = [
     r"^(chnoua\s+ahwelk|labes|ahlen|mrhaba+|yaa\s+weldi)\s*[!?.:,]*$",
     # Demandes tunisiennes de nouvelles (post-normalisation)
     r"^(comment\s+tu\s+vas|je\s+demande\s+comment\s+tu\s+vas)\s*[?!.]*$",
+    r"^(quoi\s+)?comment\s+tu\s+vas\s*[?!.]*$",
     r"^(vraiment|je\s+ne\s+voulais\s+pas\s+dire.*)$",
 ]
 
-def classify_message_type(raw_message):
+def _collapse_repeated_letters(token):
+    """Ramene les repetitions excessives a 2 lettres pour la comparaison floue."""
+    return re.sub(r"([a-z])\1{2,}", r"\1\1", token)
+
+
+def _similar(a, b):
+    return SequenceMatcher(None, a, b).ratio()
+
+
+def _has_business_signal(msg_normalized):
+    for phrase in _BUSINESS_SIGNAL_PHRASES:
+        if phrase in msg_normalized:
+            return phrase
+    if contains_word(msg_normalized, _BUSINESS_SIGNALS):
+        for signal in _BUSINESS_SIGNALS:
+            if contains_word(msg_normalized, [signal]):
+                return signal
+    return None
+
+
+def _looks_like_social_message(msg_normalized):
+    """
+    Detecte les petits messages sociaux mal ecrits sans enumerer tous les cas.
+    Combine normalisation, similarite floue et absence de signal metier.
+    """
+    compact = re.sub(r"\s+", " ", msg_normalized).strip()
+    words = [_collapse_repeated_letters(w) for w in compact.split() if w]
+    if not words:
+        return True
+    if len(words) > 6:
+        return False
+
+    if "comment tu vas" in compact or "ca va" in compact or "ca roule" in compact:
+        return True
+
+    social_targets = [
+        "hello", "bonjour", "bonsoir", "salut", "salam", "coucou", "hey",
+        "merci", "labes", "ok", "top", "cool", "super", "parfait",
+    ]
+    bot_mentions = {"chatbot", "chatchout", "bot", "assistant"}
+    filler = {"ca", "va", "toi", "vous", "comment", "tu", "vas", "beaucoup", "bien"}
+    meaningful = [w for w in words if w not in bot_mentions]
+    if not meaningful:
+        return True
+
+    social_hits = 0
+    for word in meaningful:
+        if word in filler or any(_similar(word, target) >= 0.72 for target in social_targets):
+            social_hits += 1
+
+    return social_hits >= max(1, len(meaningful) - 1)
+
+
+def _llm_route_message_type(raw_message):
+    """
+    Routage semantique avant toute donnee MongoDB.
+    En cas d'incertitude, on privilegie GENERAL pour eviter la pollution metier.
+    """
+    if not llm_ready or not llm_client:
+        return None
+
+    safe_message = raw_message.replace('"', '\\"')
+    prompt = f"""
+Tu es un routeur d'intention pour un assistant SAV.
+Decide si le message est une conversation generale ou une demande metier explicite.
+
+Categories possibles :
+- GENERAL : salutation, remerciement, small talk, question generale, demande d'aide vague, message ambigu.
+- BUSINESS : demande claire liee au SAV, commande, livraison, retour, remboursement, produit, Retenza, reduction, parrainage, ambassadeur.
+
+Regle critique : si le message est mal ecrit, familier, franco-tunisien, ou ambigu mais ne demande pas clairement un sujet metier, choisis GENERAL.
+Ne choisis BUSINESS que si le besoin metier est explicite.
+
+Reponds uniquement en JSON strict :
+{{"type":"GENERAL ou BUSINESS","intent":"Salutation, Remerciement, Aide generale, Autre, Plainte SAV, Retour, Remboursement, Parrainage, Ambassadeur, Retenza, Livraison, Commande, Promotions ou Produits","reason":"raison courte"}}
+
+Message : "{safe_message}"
+"""
+    try:
+        raw = _llm_generate_text(prompt, temperature=0.0)
+        result = _clean_json_response(raw)
+        routed_type = str(result.get("type", "GENERAL")).upper().strip()
+        intent = str(result.get("intent", "Autre")).strip()
+        reason = str(result.get("reason", "Routage LLM")).strip()
+        if routed_type not in ["GENERAL", "BUSINESS"]:
+            routed_type = "GENERAL"
+        if routed_type == "GENERAL" and intent not in _GENERAL_INTENTS:
+            intent = "Autre"
+        if routed_type == "BUSINESS" and intent not in _BUSINESS_INTENTS:
+            routed_type = "GENERAL"
+            intent = "Autre"
+        return {"type": routed_type, "intent": intent, "reason": reason}
+    except Exception as e:
+        print(f"[API_ERROR] Routage semantique indisponible ({llm_provider}) : {e}.")
+        return None
+
+def _legacy_classify_message_type(raw_message):
     """
     Classe le message en 'GENERAL' (conversation sociale) ou 'BUSINESS' (demande metier).
 
@@ -260,6 +400,43 @@ def classify_message_type(raw_message):
 
     # --- RÈGLE 4 : UNKNOWN (Inconnu / Ambigu) → Analyse sémantique Gemini ---
     return ("UNKNOWN", "Message ambigu ou nouveau, necessite une analyse semantique")
+
+def classify_message_type(raw_message, conversation_history=None):
+    """
+    Route le message avant toute logique metier :
+    GENERAL pour conversation, small talk, aide vague ou ambiguite.
+    BUSINESS uniquement si un besoin SAV/Retenza est explicite.
+    """
+    msg_normalized = normalize_text(raw_message)
+    msg_words = msg_normalized.split()
+
+    # Relance contextuelle ("en 1 phrase", "j'ai pas compris", etc.) → toujours BUSINESS
+    if conversation_history and _is_contextual_followup(raw_message, []):
+        return ("BUSINESS", "Relance contextuelle sur le sujet en cours")
+
+    if _is_delivery_delay_complaint(raw_message):
+        return ("BUSINESS", "Plainte livraison / colis non recu detectee")
+
+    business_signal = _has_business_signal(msg_normalized)
+    if business_signal:
+        return ("BUSINESS", f"Signal metier detecte : '{business_signal}'")
+
+    for pattern in _SOCIAL_PATTERNS:
+        if re.fullmatch(pattern, msg_normalized.strip()):
+            return ("GENERAL", f"Pattern social detecte : '{pattern[:40]}...'")
+
+    if _looks_like_social_message(msg_normalized):
+        return ("GENERAL", "Message social court detecte par similarite")
+
+    if len(msg_words) <= 4:
+        return ("GENERAL", f"Message court ({len(msg_words)} mot(s)) sans signal metier")
+
+    routed = _llm_route_message_type(raw_message)
+    if routed:
+        return (routed["type"], f"Routage semantique : {routed['reason']}")
+
+    return ("UNKNOWN", "Message ambigu ou nouveau, sans signal metier explicite")
+
 
 def _clean_json_response(raw_text):
     """
@@ -561,32 +738,74 @@ def _detect_intents(message):
 
 
 def _is_example_request(message):
+    """Detecte si l'utilisateur demande explicitement un exemple."""
+    msg_lower = normalize_text(message)
+    return any(w in msg_lower for w in ["exemple", "illustration", "concret", "concretement", "par exemple", "donne un exemple"])
+
+
+def _detect_response_format(message):
     """
-    Detecte si l'utilisateur demande explicitement un exemple.
+    Detecte les contraintes de format demandees par l'utilisateur.
+    Retourne : one_sentence | simple | why | example | detail | not_understood | None
     """
-    msg_lower = message.lower().strip()
-    return any(w in msg_lower for w in ["exemple", "illustration", "concret", "concrètement", "par exemple"])
+    msg_lower = normalize_text(message)
+    if any(p in msg_lower for p in ["1 phrase", "une phrase", "en phrase", "en 1 phrase", "en bref", "resume", "resumer", "bref", "en une phrase"]):
+        return "one_sentence"
+    if any(p in msg_lower for p in ["simple", "simplifie", "plus simple", "facile", "yaaser"]):
+        return "simple"
+    if any(p in msg_lower for p in ["pas compris", "j'ai pas compris", "je n'ai pas compris", "pas clair", "comprends pas", "j'ai pas capt"]):
+        return "not_understood"
+    if "pourquoi" in msg_lower or msg_lower.startswith("c pourquoi") or msg_lower.startswith("pk"):
+        return "why"
+    if _is_example_request(message):
+        return "example"
+    if any(p in msg_lower for p in ["encore", "explique encore", "plus detail", "plus de detail", "developpe", "developper", "explique plus"]):
+        return "detail"
+    return None
 
 
 def _is_contextual_followup(message, detected_intents):
     """
-    Detecte si la question de l'utilisateur est une demande de precision/exemple basee sur le contexte precedent.
+    Detecte une relance courte qui depend du sujet precedent :
+    "plus detail", "explique encore", "j'ai pas compris", "en 1 phrase", etc.
     """
-    if _is_example_request(message):
+    msg_lower = normalize_text(message)
+
+    # Nouvelle question metier explicite : ce n'est pas une relance sur le sujet precedent
+    if _has_business_signal(msg_lower):
+        return False
+    raw_intents = _detect_raw_intents(message)
+    if any(i not in _GENERAL_INTENTS for i in raw_intents):
+        return False
+
+    if _detect_response_format(message):
         return True
-        
-    msg_lower = message.lower().strip()
+
     followups = [
-        "pourquoi", "comment", "explique", "explications", "developper", "developpe",
-        "développer", "développe", "reformule", "reformuler", "explique-moi", 
-        "dis-m'en plus", "peux-tu developper", "peux-tu développer", "encore", "plus"
+        "pourquoi", "comment", "explique", "explication", "explications",
+        "developper", "developpe", "reformule", "reformuler", "encore", "plus",
+        "detail", "details", "detaille", "detailler",
+        "tt les chose", "toutes les choses", "tout les choses", "tous les choses",
+        "c quoi", "c'est quoi", "c koi", "koi c", "quoi c",
     ]
     words = msg_lower.split()
-    # Si le message est tres court, contient un mot de relance et qu'aucune intention precise n'a ete trouvee
-    if len(words) <= 4 and not detected_intents and any(f in msg_lower for f in followups):
+    if detected_intents:
+        return False
+    if len(words) <= 8 and any(f in msg_lower for f in followups):
         return True
-        
+    # Questions ultra-courtes sur le sujet en cours ("c pourquoi 20%", "donne un exemple")
+    if len(words) <= 5 and any(f in msg_lower for f in followups + ["exemple", "20%", "20 %"]):
+        return True
     return False
+
+
+def _followup_response_mode(message):
+    fmt = _detect_response_format(message)
+    if fmt:
+        return fmt
+    if _is_example_request(message):
+        return "example"
+    return "detail"
 
 
 def _get_last_assistant_intent(conversation_history):
@@ -598,15 +817,17 @@ def _get_last_assistant_intent(conversation_history):
     for msg in reversed(conversation_history):
         role = msg.get("role")
         if role in ["assistant", "model"]:
-            text = msg.get("text", "").lower()
+            text = normalize_text(msg.get("text", ""))
             if any(w in text for w in ["retour", "rembourse"]):
                 return "retour"
-            if any(w in text for w in ["parrain", "filleul", "inviter", "invitation", "ami"]):
-                return "parrainage"
             if any(w in text for w in ["retenza", "ambassadeur", "score"]):
                 return "retenza"
+            if any(w in text for w in ["parrain", "filleul", "inviter", "invitation", "ami"]):
+                return "parrainage"
             if any(w in text for w in ["commande", "colis", "livraison"]):
                 return "commande"
+            if any(w in text for w in ["gel nettoyant", "nettoyant", "salicylique", "niacinamide", "serum"]):
+                return "produit_acne"
             if any(w in text for w in ["acne", "acné", "imperfection"]):
                 return "produit_acne"
             if any(w in text for w in ["peau grasse", "sebum", "sébum"]):
@@ -630,7 +851,23 @@ def _get_intent_response(intent, client_name, client_email, commerce_name, mode=
     """
     Retourne la reponse specifique (directe ou approfondie/exemple) associee a une intention.
     """
+    intent_aliases = {
+        "Retour": "retour",
+        "Remboursement": "retour",
+        "Parrainage": "parrainage",
+        "Retenza": "retenza",
+        "Livraison": "commande",
+        "Commande": "commande",
+        "Produits": "produits_generaux",
+        "Promotions": "promotions",
+    }
+    intent = intent_aliases.get(intent, intent)
+
     responses = {
+        "Assistance": {
+            "direct": f"{commerce_name} est une boutique en ligne, et cette plateforme sert a vous accompagner rapidement : expliquer les produits, suivre une commande, traiter un retour ou remboursement, et clarifier le programme de fidelite Retenza. Dites-moi ce que vous voulez comprendre en premier.",
+            "example": f"Par exemple, vous pouvez me demander : 'quels produits conseillez-vous pour peau seche ?', 'ou est ma commande ?', ou 'comment fonctionne Retenza ?'."
+        },
         "retour": {
             "direct": f"Pour retourner un article chez {commerce_name}, vous disposez d'un delai de 14 jours a compter de la reception de votre colis. L'article doit etre inutilise, non ouvert et retourne dans son emballage d'origine pour obtenir un remboursement complet.",
             "example": "Par exemple, si vous avez achete un parfum qui ne vous convient pas, vous pouvez le renvoyer scelle. Une fois receptionne et controle par notre SAV, nous recreditons votre compte sous 5 a 7 jours ouvres."
@@ -641,11 +878,20 @@ def _get_intent_response(intent, client_name, client_email, commerce_name, mode=
         },
         "retenza": {
             "direct": f"Retenza est une plateforme intelligente de fidelisation client utilisee par {commerce_name}. Grâce a des analyses d'IA (segmentation GMM et scoring de fidelite), elle recompense nos clients les plus fideles en leur attribuant le statut d'Ambassadeur. Ce statut ouvre l'acces a un systeme de parrainage menant a une remise de -20% apres 5 parrainages.",
-            "example": "Par exemple, notre algorithme calcule votre score de fidelite et votre score d'influence. Plus vous achetez, plus votre statut s'ameliore, debloquant des modeles d'invitation prets a l'envoi et des remises exclusives."
+            "example": f"Imaginez : vous achetez regulierement chez {commerce_name}, vous devenez Ambassadeur, vous invitez 5 amis avec votre code personnel, et chacun fait un premier achat — vous debloquez alors -20% sur votre prochaine commande.",
+            "simple": f"Retenza recompense les clients fideles de {commerce_name} : plus vous achetez, plus vous gagnez en avantages, jusqu'a devenir Ambassadeur et obtenir -20% via le parrainage.",
+            "one_sentence": f"Retenza recompense les clients fideles de {commerce_name} avec le statut Ambassadeur et une remise de -20% apres 5 parrainages reussis.",
+            "why": "La remise de -20% recompense les clients qui apportent 5 nouveaux acheteurs via le parrainage : c'est notre facon de vous remercier pour votre fidelite et votre influence.",
+            "not_understood": f"En bref : vous achetez chez {commerce_name}, puis vous devenez Ambassadeur, puis vous parrainez 5 amis, et vous gagnez -20%. C'est gratuit et automatique !",
+            "detail": f"Retenza calcule deux scores : votre fidelite (achats reguliers) et votre influence (capacite a recommander la boutique). Score d'influence >= 80 = statut Ambassadeur. Vous recevez un code personnel a partager ; chaque ami qui achete compte. A 5 parrainages valides, -20% sur un achat."
         },
         "commande": {
             "direct": f"Nos delais de livraison sont de 3 a 5 jours ouvres chez {commerce_name}. Vous pouvez suivre l'acheminement de votre colis avec le lien recu par e-mail. Si vous constatez un retard anormal, transmettez-moi votre numero de commande pour que je verifie en direct.",
-            "example": "Par exemple, pour une commande validee le lundi matin, notre atelier la prepare le jour meme, l'expedie le mardi, et vous la recevez chez vous ou en point relais entre le jeudi et le samedi."
+            "example": "Par exemple, pour une commande validee le lundi matin, notre atelier la prepare le jour meme, l'expedie le mardi, et vous la recevez chez vous ou en point relais entre le jeudi et le samedi.",
+            "delivery_delay": f"Je comprends votre inquietude, {client_name}. Nos delais habituels sont de 3 a 5 jours ouvres, donc apres 10 jours votre colis est en retard. Pouvez-vous me transmettre votre numero de commande ? Je lance une verification immediate et je vous tiens informe(e) sous 24h.",
+            "why": "Les delais de 3 a 5 jours correspondent au temps de preparation, d'expedition et de livraison par notre transporteur en Tunisie.",
+            "not_understood": f"Commande pas encore arrivee ? Delai normal = 3 a 5 jours. Au-dela, c'est un retard : envoyez-moi votre numero de commande et je verifie tout de suite.",
+            "one_sentence": f"Les commandes {commerce_name} arrivent en 3 a 5 jours ouvres ; si ca depasse, donnez-moi votre numero de commande pour que je verifie."
         },
         "produit_acne": {
             "direct": "Pour eliminer les imperfections et lutter contre l'acne, nous vous conseillons notre Gel Nettoyant Purifiant a l'Acide Salicylique combine avec notre Serum Anti-imperfections au Niacinamide.",
@@ -688,13 +934,80 @@ def _get_intent_response(intent, client_name, client_email, commerce_name, mode=
             "example": "N'hesitez pas si vous avez besoin d'autre chose. Bonne journee !"
         },
         "Plainte SAV": {
-            "direct": "Je suis sincèrement désolé pour ce problème et je comprends votre frustration. Pourriez-vous me donner plus de détails sur le problème rencontré pour que je puisse trouver une solution immédiate ?",
-            "example": "Par exemple, s'il s'agit d'un produit abimé, une photo nous aiderait à vous dédommager le plus rapidement possible."
+            "direct": f"Je suis sincerement desole(e) pour ce probleme, {client_name}, et je comprends votre frustration. Pourriez-vous me decrire precisement ce qui s'est passe (produit endommage, commande incomplete, retard...) afin que je trouve une solution immediate ?",
+            "example": "Par exemple, si votre colis est arrive endommage, envoyez-moi une photo et votre numero de commande : nous procedons au remplacement ou au remboursement sous 48h.",
+            "not_understood": f"Pas de souci ! Decrivez-moi simplement le probleme (colis pas recu, produit casse, mauvaise reference...) et je m'en occupe personnellement.",
+            "one_sentence": f"Je suis desole(e) pour ce desagrement — decrivez-moi le probleme et je le regle avec vous immediatement."
         }
     }
     
     intent_data = responses.get(intent, responses["produits_generaux"])
-    return intent_data.get(mode, intent_data["direct"])
+    return intent_data.get(mode, intent_data.get("direct", intent_data.get("example", "")))
+
+
+def _is_delivery_delay_complaint(message):
+    """Detecte un colis/commande non recu ou en retard (ex: 10 jours sans livraison)."""
+    msg = normalize_text(message)
+    delay_patterns = [
+        r"\d+\s+jours?",
+        r"pas\s+recu",
+        r"pas\s+arrive",
+        r"toujours\s+pas",
+        r"encore\s+pas",
+        r"pas\s+encore",
+        r"pas\s+encore\s+recu",
+        r"deja\s+\d+",
+    ]
+    delivery_words = ["colis", "paquet", "pacquet", "commande", "livraison", "livre", "recu", "arrive", "envoi", "expedition"]
+    has_delay = any(re.search(p, msg) for p in delay_patterns)
+    has_delivery = any(w in msg for w in delivery_words) or "pas recu" in msg
+    # "10 jours" + "pas recu" suffit meme sans le mot paquet/colis
+    if has_delay and ("pas recu" in msg or "pas arrive" in msg):
+        return True
+    return has_delay and has_delivery
+
+
+def _resolve_response_mode(user_message, intent, default_mode="direct"):
+    """Choisit le mode de reponse adapte au message et a l'intention."""
+    fmt = _detect_response_format(user_message)
+    if fmt:
+        return fmt
+    if intent in ("commande", "Commande", "Livraison") and _is_delivery_delay_complaint(user_message):
+        return "delivery_delay"
+    return default_mode
+
+
+_INTENT_KEY_MAP = {
+    "Retenza": "retenza", "Commande": "commande", "Livraison": "commande",
+    "Parrainage": "parrainage", "Retour": "retour", "Plainte SAV": "Plainte SAV",
+    "Remboursement": "retour", "Produits": "produits_generaux", "Promotions": "promotions",
+    "Ambassadeur": "retenza", "Assistance": "Assistance",
+}
+
+
+def _canonical_to_intent_key(intent):
+    return _INTENT_KEY_MAP.get(intent, intent.lower())
+
+
+def _pick_varied_followup_mode(user_message, intent_key, conversation_history):
+    """Evite de repeter la meme reponse FAQ sur des relances successives."""
+    requested = _resolve_response_mode(user_message, intent_key, _followup_response_mode(user_message))
+    if not conversation_history:
+        return requested
+
+    last_assistant = ""
+    for msg in reversed(conversation_history):
+        if msg.get("role") in ["assistant", "model"]:
+            last_assistant = normalize_text(msg.get("text", ""))
+            break
+
+    if requested == "detail" and "score d'influence" in last_assistant:
+        return "example"
+    if requested == "example" and "imaginez" in last_assistant:
+        return "simple"
+    if requested == "direct" and intent_key == "retenza" and "retenza" in last_assistant:
+        return "simple"
+    return requested
 
 
 def _get_offline_response(client_name, client_email, commerce_name, conversation_history, user_message):
@@ -702,48 +1015,56 @@ def _get_offline_response(client_name, client_email, commerce_name, conversation
     Simule une reponse SAV naturelle et contextuelle a partir de la FAQ locale.
     Supporte les questions multiples (multi-intent) et conserve le contexte de conversation.
     """
-    # 1. Detecter les intentions du message actuel
-    detected = _detect_intents(user_message)
-    
-    # 2. Gestion du contexte / follow-up ("explique encore", "donne un exemple", "pourquoi", "comment")
-    is_asking_example = _is_contextual_followup(user_message, detected)
-    
-    if not detected or is_asking_example:
-        # Tenter de recuperer la derniere intention de la conversation
+    contextual_intents = _get_contextual_followup_intents(conversation_history, user_message)
+    if contextual_intents:
+        intent_key = _canonical_to_intent_key(contextual_intents[0])
+        mode = _pick_varied_followup_mode(user_message, intent_key, conversation_history)
+        return _get_intent_response(intent_key, client_name, client_email, commerce_name, mode=mode)
+
+    msg_type, _ = classify_message_type(user_message, conversation_history)
+    if msg_type == "GENERAL" or (msg_type == "UNKNOWN" and not _has_business_signal(normalize_text(user_message))):
+        return _get_general_conversation_response(
+            client_name,
+            commerce_name,
+            _infer_general_intent(user_message),
+            user_message
+        )
+
+    detected = detect_all_intents(user_message, conversation_history)
+    if "Plainte SAV" in detected:
+        detected = ["Plainte SAV"] + [i for i in detected if i not in ("Plainte SAV", "Commande", "Livraison")]
+
+    is_asking_example = _is_contextual_followup(user_message, [])
+
+    if not detected or (is_asking_example and len(detected) <= 1 and detected[0] in _GENERAL_INTENTS):
         last_intent = _get_last_assistant_intent(conversation_history)
         if last_intent:
-            if is_asking_example:
-                # L'utilisateur demande explicitement un exemple/detail sur le sujet precedent
-                return _get_intent_response(last_intent, client_name, client_email, commerce_name, mode="example")
-            else:
-                # L'utilisateur pose une question de contexte standard sur le sujet precedent
-                return _get_intent_response(last_intent, client_name, client_email, commerce_name, mode="direct")
-        elif is_asking_example:
-            # Fallback exemple si aucun contexte trouve
-            return f"Je serais ravi de vous donner un exemple. Pouvez-vous me preciser sur quel sujet (produits, parrainage Retenza, retours) ?"
-            
-    # Si toujours aucune intention detectee
-    if not detected:
+            mode = _pick_varied_followup_mode(user_message, last_intent, conversation_history)
+            return _get_intent_response(last_intent, client_name, client_email, commerce_name, mode=mode)
+        if is_asking_example:
+            return "Je serais ravi de vous donner un exemple. Pouvez-vous me preciser sur quel sujet (produits, parrainage Retenza, retours) ?"
+
+    if not detected or detected == ["Autre"]:
         return random.choice([
             f"Je peux vous renseigner sur plusieurs sujets : suivi de commande, retours, nos produits, votre programme de fidelite Retenza ou vos avantages Ambassadeur. Que desirez-vous savoir ?",
             f"Je suis a votre disposition pour repondre a vos questions sur {commerce_name} (livraisons, soins, remboursements, ou votre statut Retenza). Dites-moi ce dont vous avez besoin.",
             f"Pour {commerce_name}, je peux vous renseigner sur nos produits, vos commandes, les retours, ou votre programme de fidelite. Qu'est-ce qui vous interesse ?"
         ])
-        
-    # 3. Assembler la reponse (support du multi-intent)
+
     parts = []
     for i, intent in enumerate(detected):
-        mode = "example" if is_asking_example else "direct"
-        resp = _get_intent_response(intent, client_name, client_email, commerce_name, mode=mode)
-        
-        # Ajouter des mots de liaison naturels pour les questions multiples
+        intent_key = _canonical_to_intent_key(intent)
+        default = "direct" if not is_asking_example else _followup_response_mode(user_message)
+        mode = _resolve_response_mode(user_message, intent_key, default)
+        resp = _get_intent_response(intent_key, client_name, client_email, commerce_name, mode=mode)
+
         if i == 0:
             parts.append(resp)
         elif i == 1:
             parts.append(f"Concernant votre demande sur {intent.replace('_', ' ')} : " + resp)
         else:
             parts.append("Enfin, pour ce qui est de votre derniere question : " + resp)
-            
+
     return "\n\n".join(parts)
 
 
@@ -782,9 +1103,11 @@ def _detect_raw_intents(message):
         r"je\s+suis\s+(tres\s+|vraiment\s+|tellement\s+)?(decu|mecontent|insatisfait)",
         r"(le|ce|mon)\s+produit\s+(est\s+)?(casse|defectueux|abime|brise|endommage)",
         r"produit.{0,20}(casse|defectueux|ne\s+fonctionne|ne\s+marche|pas\s+bon)",
-        r"(ma|la)\s+commande.{0,30}(probleme|mauvais|incorrect|erreur)",
+        r"(ma|la|mon)\s+commande.{0,30}(probleme|mauvais|incorrect|erreur)",
         r"j'ai un probleme avec (ma commande|mon produit|mon article|mon achat)",
+        r"probleme\s+avec\s+(ma|mon|la|le)\s+(commande|produit|colis|article|achat|paquet)",
         r"j'ai un probleme",
+        r"probleme\s+avec",
     ]
     has_sav = contains_word(msg, sav_keywords) or any(re.search(p, msg) for p in sav_patterns)
     if has_sav:
@@ -797,7 +1120,11 @@ def _detect_raw_intents(message):
         "tu sers a quoi", "comment tu m'aides", "comment tu m'aider", "qu'est-ce que tu peux faire",
         "qu'est ce que tu peux faire", "services", "fonctionnalites", "fonctionnalités"
     ]
-    if contains_word(msg, assistance_keywords) or "tu fais quoi" in msg or "qui es-tu" in msg or "que fais-tu" in msg:
+    role_question = any(p in msg for p in ["quoi faire toi", "tu est pourquoi", "tu es pourquoi", "tu es la pourquoi"])
+    if contains_word(msg, assistance_keywords) or role_question or "tu fais quoi" in msg or "qui es-tu" in msg or "que fais-tu" in msg:
+        detected.append("Assistance")
+
+    if "plateforme" in msg and "Assistance" not in detected:
         detected.append("Assistance")
 
     # 3. Retour / Remboursement
@@ -822,12 +1149,17 @@ def _detect_raw_intents(message):
         detected.append("Retenza")
 
     # 6. Commande / Livraison
-    if contains_word(msg, ["livraison", "colis", "arrive", "arriv\u00e9", "delai",
+    if contains_word(msg, ["livraison", "colis", "paquet", "pacquet", "arrive", "arriv\u00e9", "delai",
                                "d\u00e9lai", "expedition", "exp\u00e9dition", "tracking",
-                               "livre", "livr\u00e9", "recu", "re\u00e7u", "envoi", "envoy\u00e9"]):
+                               "livre", "livr\u00e9", "recu", "re\u00e7u", "envoi", "envoy\u00e9", "retard"]):
         detected.append("Livraison")
-    if contains_word(msg, ["commande", "suivi", "statut", "ou est", "o\u00f9 est"]):
+    if contains_word(msg, ["commande", "suivi", "statut", "ou est", "o\u00f9 est"]) or "pas recu" in msg:
         detected.append("Commande")
+    if _is_delivery_delay_complaint(message) and "Plainte SAV" not in detected:
+        if "Commande" not in detected:
+            detected.append("Commande")
+        if "Livraison" not in detected:
+            detected.append("Livraison")
 
     # 7. Promotions
     if contains_word(msg, ["promo", "promotion", "promotions", "reduction",
@@ -836,13 +1168,25 @@ def _detect_raw_intents(message):
         detected.append("Promotions")
 
     # 8. Produits — uniquement si pas de plainte SAV
-    if not has_sav and contains_word(msg, [
+    product_keywords = [
         "produit", "produits", "article", "articles", "disponible",
         "catalogue", "gamme", "gammes", "vend", "vendez",
         "acheter", "achat", "soin", "soins", "creme", "cr\u00e8me",
-        "parfum", "parfums", "peau", "acne", "acn\u00e9", "bouton",
+        "parfum", "parfums", "peau", "skin", "skincare", "gel", "nettoyant", "serum", "niacinamide", "salicylique", "acne", "acn\u00e9", "bouton",
         "imperfection", "grasse", "sebum", "s\u00e9bum", "seche", "s\u00e8che", "hydratant"
-    ]):
+    ]
+    explicit_product_keywords = [
+        "produit", "produits", "catalogue", "gamme", "gammes",
+        "soin", "soins", "creme", "cr\u00e8me", "parfum", "parfums",
+        "peau", "skin", "skincare", "gel", "nettoyant", "serum", "niacinamide", "salicylique", "acne", "acn\u00e9", "bouton",
+        "imperfection", "grasse", "sebum", "s\u00e9bum", "seche", "s\u00e8che", "hydratant"
+    ]
+    has_return_or_refund = any(i in detected for i in ["Retour", "Remboursement"])
+    if (
+        not has_sav
+        and contains_word(msg, product_keywords)
+        and (not has_return_or_refund or contains_word(msg, explicit_product_keywords))
+    ):
         detected.append("Produits")
 
     # 9. Salutation
@@ -878,6 +1222,82 @@ def _get_last_user_intent(conversation_history, current_message):
     return None
 
 
+def _canonicalize_intent(intent):
+    aliases = {
+        "retour": "Retour",
+        "parrainage": "Parrainage",
+        "retenza": "Retenza",
+        "commande": "Commande",
+        "produit_acne": "Produits",
+        "produit_peau_grasse": "Produits",
+        "produit_peau_seche": "Produits",
+        "produits_generaux": "Produits",
+        "promotions": "Promotions",
+        "contact": "Assistance",
+        "horaires": "Assistance",
+        "prix": "Produits",
+        "salutation": "Salutation",
+        "remerciement": "Remerciement",
+    }
+    return aliases.get(intent, intent)
+
+
+def _get_contextual_followup_intents(conversation_history, current_message):
+    """
+    Retourne le sujet precedent quand le message actuel est une relance courte.
+    Evite que "plus detail", "explique encore" ou "j'ai pas compris" redeviennent des salutations.
+    """
+    if not _is_contextual_followup(current_message, []):
+        return []
+
+    last_assistant_intent = _get_last_assistant_intent(conversation_history)
+    if last_assistant_intent in ["produit_acne", "produit_peau_grasse", "produit_peau_seche"]:
+        return [_canonicalize_intent(last_assistant_intent)]
+
+    last_user_intents = _get_last_user_intent(conversation_history, current_message)
+    if last_user_intents:
+        return [_canonicalize_intent(intent) for intent in last_user_intents]
+
+    if last_assistant_intent:
+        return [_canonicalize_intent(last_assistant_intent)]
+
+    return []
+
+
+def _infer_general_intent(message):
+    msg_n = normalize_text(message)
+    if _detect_response_format(message):
+        return "Autre"
+    if any(w in msg_n for w in ["comment tu vas", "ca va", "ca roule", "tout va", "tout va bien", "labes"]):
+        return "Salutation"
+    if any(w in msg_n for w in ["merci", "thx", "top", "super", "parfait", "nickel", "ok", "d'accord"]):
+        return "Remerciement"
+    if any(w in msg_n for w in ["aide", "help", "assistance", "question", "qui", "quoi", "comment", "parler", "raconte"]):
+        return "Aide generale"
+    return "Salutation"
+
+
+def _build_format_instruction(user_message):
+    """Genere une consigne de format a injecter dans le prompt LLM."""
+    fmt = _detect_response_format(user_message)
+    instructions = {
+        "one_sentence": "L'utilisateur demande UNE SEULE PHRASE. Reponds en exactement 1 phrase courte, sans liste ni paragraphe.",
+        "simple": "L'utilisateur veut une explication SIMPLE et courte (2-3 phrases max, vocabulaire facile).",
+        "why": "L'utilisateur demande POURQUOI. Explique la raison/logique derriere le sujet en cours, pas une repetition de la definition.",
+        "example": "L'utilisateur demande un EXEMPLE CONCRET. Donne un scenario reel et pratique lie au sujet discute.",
+        "not_understood": "L'utilisateur N'A PAS COMPRIS. Reformule differemment, plus simplement, avec une analogie ou un resume en etapes.",
+        "detail": "L'utilisateur veut PLUS DE DETAILS. Developpe le sujet en cours avec des informations supplementaires, sans repeter mot pour mot la reponse precedente.",
+    }
+    return instructions.get(fmt, "")
+
+
+def _is_pure_social_intents(intents):
+    """True si les intentions sont uniquement conversationnelles (pas de sujet metier)."""
+    if not intents:
+        return True
+    return all(i in _GENERAL_INTENTS for i in intents)
+
+
 def detect_all_intents(message, conversation_history):
     """
     Identifie toutes les intentions presentes dans le message de l'utilisateur.
@@ -885,18 +1305,36 @@ def detect_all_intents(message, conversation_history):
     - GENERAL → retourne ['Salutation'] ou ['Remerciement'] directement.
     - BUSINESS → passe par les règles locales NLP + fallback Gemini si nécessaire.
     """
-    # --- COUCHE 0 : Classification Conversation vs Business ---
-    msg_type, msg_reason = classify_message_type(message)
-    print(f"[CLASSIFY] {msg_type} — {msg_reason}")
+    # --- COUCHE 0 : Intentions metier explicites dans le message actuel ---
+    explicit_intents = _detect_raw_intents(message)
+    explicit_business = [i for i in explicit_intents if i not in _GENERAL_INTENTS]
+    if explicit_business:
+        if "Plainte SAV" in explicit_business:
+            explicit_business = ["Plainte SAV"] + [
+                i for i in explicit_business if i not in ("Plainte SAV", "Commande", "Livraison")
+            ]
+        return explicit_business
+
+    # --- COUCHE 1 : Relances contextuelles ---
+    contextual_intents = _get_contextual_followup_intents(conversation_history, message)
+    if contextual_intents:
+        print(f"[CLASSIFY] Relance contextuelle -> {contextual_intents}")
+        return contextual_intents
+
+    # --- COUCHE 2 : Classification Conversation vs Business ---
+    msg_type, msg_reason = classify_message_type(message, conversation_history)
+    print(f"[CLASSIFY] {msg_type} - {msg_reason}")
 
     if msg_type == "GENERAL":
-        # Distinguer salutation vs remerciement vs autre social
-        msg_n = normalize_text(message)
-        if any(w in msg_n for w in ["merci", "thx", "top", "super", "parfait", "nickel", "ok", "d'accord"]):
-            return ["Remerciement"]
-        return ["Salutation"]
+        return [_infer_general_intent(message)]
 
-    # --- COUCHE 1 : NLP Local (pour les messages BUSINESS) ---
+    if msg_type == "UNKNOWN" and not _has_business_signal(normalize_text(message)):
+        routed = _llm_route_message_type(message)
+        if routed and routed["type"] == "BUSINESS":
+            return [routed["intent"]]
+        return ["Autre"]
+
+    # --- COUCHE 3 : NLP Local (pour les messages BUSINESS) ---
     detected = _detect_raw_intents(message)
 
     # Si aucune intention directe n'a ete detectee
@@ -907,7 +1345,7 @@ def detect_all_intents(message, conversation_history):
             if last_user_intents:
                 detected = last_user_intents
 
-    # --- COUCHE 2 : Fallback LLM (compréhension sémantique avancée) ---
+    # --- COUCHE 4 : Fallback LLM (comprehension semantique avancee) ---
     if not detected and llm_ready and llm_client:
         try:
             prompt = (
@@ -1059,27 +1497,77 @@ def get_intent_focused_data(intention, full_context):
     return get_aggregated_context([intention], full_context)
 
 
-def validate_and_sanitize_response(response_text, intents):
+def _get_general_conversation_response(client_name, commerce_name, intent, user_message):
     """
-    Verifie la coherence de la reponse generee par Gemini vis-a-vis des intentions.
-    Si Gemini devie (ex: parle de parrainage sur une salutation), applique un correctif.
+    Reponse courte et naturelle pour les messages conversationnels.
+    Aucun contexte MongoDB, aucune mention spontanee de Retenza/parrainage/reduction.
+    """
+    if intent == "Remerciement":
+        return random.choice([
+            "Avec plaisir ! Comment puis-je vous aider d'autre ?",
+            "Je vous en prie ! Je reste disponible si besoin.",
+            "Avec plaisir, merci a vous !"
+        ])
+
+    if intent == "Aide generale":
+        return (
+            f"Bien sur, je peux vous aider. Dites-moi simplement ce dont vous avez besoin "
+            f"concernant {commerce_name}."
+        )
+
+    msg_n = normalize_text(user_message)
+    if any(w in msg_n for w in ["comment tu vas", "ca va", "ca roule", "tout va", "labes"]):
+        return random.choice([
+            "Tres bien, merci ! Et vous, tout va bien ? Comment puis-je vous aider ?",
+            "Je vais tres bien, merci ! De quoi avez-vous besoin aujourd'hui ?",
+            f"Ca va super, merci {client_name} ! Que puis-je faire pour vous ?"
+        ])
+
+    if any(w in msg_n for w in ["hello", "salut", "coucou", "hey", "salam", "bonjour", "bonsoir"]):
+        return random.choice([
+            f"Bonjour {client_name} ! Ravie de vous retrouver. Comment puis-je vous aider ?",
+            f"Salut {client_name} ! Content de vous parler. Qu'est-ce que je peux faire pour vous ?",
+            "Hello ! Comment puis-je vous accompagner aujourd'hui ?"
+        ])
+
+    return random.choice([
+        f"Bonjour {client_name} ! Comment puis-je vous aider aujourd'hui ?",
+        "Bonjour ! De quoi avez-vous besoin ?",
+        f"Bonjour ! Je suis la pour vous aider chez {commerce_name}."
+    ])
+
+
+def validate_and_sanitize_response(response_text, intents, is_followup=False):
+    """
+    Verifie la coherence de la reponse generee par le LLM vis-a-vis des intentions.
+    Ne corrige que les vraies deviations : salutation PURE qui parle de SAV/Retenza.
     """
     text_lower = response_text.lower()
-    
-    # 1. Si Salutation, Remerciement ou Assistance pure, forcer une reponse d'accueil sans pollution metier
-    if "Salutation" in intents or "Remerciement" in intents or "Assistance" in intents:
-        # Si Gemini commence a inventer ou divaguer sur le parrainage ou autre
-        if any(w in text_lower for w in ["parrainage", "remboursement", "colis", "filleul", "ambassadeur"]):
+    business_intents = [i for i in intents if i not in _GENERAL_INTENTS]
+
+    # Relance ou intention metier : ne jamais ecraser la reponse par une salutation generique
+    if is_followup or business_intents:
+        if "Plainte SAV" in intents or "Commande" in intents or "Livraison" in intents:
+            empathie_keywords = ["desole", "excuse", "navre", "pardon", "regrette", "incident", "embete", "comprends", "inquiet"]
+            if not any(w in text_lower for w in empathie_keywords):
+                return "Je comprends votre inquietude et je suis desole(e) pour ce desagrement. " + response_text
+        return response_text
+
+    # Salutation / remerciement PURS uniquement : eviter la pollution metier non demandee
+    if _is_pure_social_intents(intents):
+        business_words = ["parrainage", "remboursement", "colis", "filleul", "ambassadeur", "retenza", "xgboost"]
+        if any(w in text_lower for w in business_words):
             if "Remerciement" in intents:
-                return "Je vous en prie ! N'hésitez pas si vous avez besoin d'autre chose."
-            return "Bonjour ! Comment puis-je vous aider aujourd'hui ?"
-            
-    # 2. Si Plainte SAV, s'assurer qu'il y a des mots d'empathie
+                return "Je vous en prie ! N'hesitez pas si vous avez besoin d'autre chose."
+            if "Salutation" in intents:
+                return response_text.split(".")[0].split("!")[0] + " !" if len(response_text) > 200 else response_text
+            return response_text
+
     if "Plainte SAV" in intents:
-        empathie_keywords = ["désolé", "excuse", "navré", "pardon", "regrette", "incident", "embêté", "navrée"]
+        empathie_keywords = ["desole", "excuse", "navre", "pardon", "regrette", "incident", "embete"]
         if not any(w in text_lower for w in empathie_keywords):
-            return "Je suis sincèrement désolé pour ce désagrément. " + response_text
-            
+            return "Je suis sincerement desole(e) pour ce desagrement. " + response_text
+
     return response_text
 
 
@@ -1089,32 +1577,51 @@ def generate_chatbot_response(client_name, client_email, commerce_name, conversa
     Filtre l'historique pour ne pas polluer l'IA en cas de changement de sujet.
     Valide et trace chaque requete avec des logs de debogage.
     """
-    # -------------------------------------------------------
-    # Mode OFFLINE : FAQ simulee (sans API LLM)
-    # -------------------------------------------------------
+    initial_contextual_intents = _get_contextual_followup_intents(conversation_history, user_message)
+    is_followup = _is_contextual_followup(user_message, []) or bool(initial_contextual_intents)
+    is_delivery_issue = _is_delivery_delay_complaint(user_message)
+
+    initial_msg_type, initial_reason = classify_message_type(user_message, conversation_history)
+    is_pure_social = (
+        initial_msg_type == "GENERAL"
+        and not initial_contextual_intents
+        and not is_delivery_issue
+        and not _has_business_signal(normalize_text(user_message))
+    )
+
+    # Mode OFFLINE : reponses locales uniquement
     if not llm_ready or not llm_client:
-        return _get_offline_response(client_name, client_email, commerce_name, conversation_history, user_message), True
+        if is_pure_social:
+            general_intent = _infer_general_intent(user_message)
+            return _get_general_conversation_response(
+                client_name, commerce_name, general_intent, user_message
+            ), True
+        return _get_offline_response(
+            client_name, client_email, commerce_name, conversation_history, user_message
+        ), True
 
-    # -------------------------------------------------------
-    # Mode ONLINE : Reponse LLM reelle
-    # -------------------------------------------------------
+    # Mode ONLINE : LLM avec historique complet
     try:
-        # 1. Classification initiale (GENERAL vs BUSINESS vs UNKNOWN)
-        msg_type, msg_reason = classify_message_type(user_message)
-
-        # 2. Detecter TOUTES les intentions du message
+        msg_type, msg_reason = classify_message_type(user_message, conversation_history)
         intents = detect_all_intents(user_message, conversation_history)
         intents_label = ", ".join(intents)
+        has_business_intent = any(i not in _GENERAL_INTENTS for i in intents)
+        has_contextual_business_intent = bool(initial_contextual_intents) or has_business_intent
 
-        # 3. Résolution du type UNKNOWN par analyse de l'intention
+        if is_pure_social and not has_contextual_business_intent:
+            msg_type = "GENERAL"
+        elif initial_contextual_intents or is_delivery_issue or has_business_intent:
+            msg_type = "BUSINESS"
+            if initial_contextual_intents:
+                print(f"[CLASSIFY] Relance contextuelle -> BUSINESS : {intents_label}")
+
         if msg_type == "UNKNOWN":
-            # Si le LLM a déterminé que c'est purement social ou hors sujet
-            if any(i in ["Salutation", "Remerciement", "Autre"] for i in intents) and not any(i not in ["Salutation", "Remerciement", "Autre"] for i in intents):
+            if _is_pure_social_intents(intents):
                 msg_type = "GENERAL"
-                print(f"[CLASSIFY] UNKNOWN resolu en GENERAL suite a l'intention : {intents_label}")
+                print(f"[CLASSIFY] UNKNOWN resolu en GENERAL : {intents_label}")
             else:
                 msg_type = "BUSINESS"
-                print(f"[CLASSIFY] UNKNOWN resolu en BUSINESS suite a l'intention : {intents_label}")
+                print(f"[CLASSIFY] UNKNOWN resolu en BUSINESS : {intents_label}")
 
         # 4. Récupération contexte MongoDB (UNIQUEMENT si BUSINESS)
         if msg_type == "GENERAL":
@@ -1127,40 +1634,47 @@ def generate_chatbot_response(client_name, client_email, commerce_name, conversa
                 full_context = "Aucune donnee enregistree pour ce client."
             client_context = get_aggregated_context(intents, full_context)
 
-        # 5. Construire le prompt systeme (informatif, non directif)
+        # 5. Construire le prompt systeme
         sav_instruction = config._SAV_INSTRUCTION if "Plainte SAV" in intents else ""
+        format_instruction = _build_format_instruction(user_message)
+        if is_followup and not format_instruction:
+            format_instruction = (
+                "C'est une RELANCE sur le sujet en cours dans l'historique. "
+                "Lis l'historique, comprends ce qui a deja ete dit, et reponds differemment "
+                "(exemple concret, simplification, pourquoi, une phrase, etc.). "
+                "Ne repete JAMAIS mot pour mot une reponse precedente. "
+                "Ne recommence JAMAIS par une salutation."
+            )
         system_instruction = config.CHATBOT_RESPONSE_PROMPT.format(
             client_name=client_name,
             client_email=client_email,
             commerce_name=commerce_name,
             intents_label=intents_label,
             sav_instruction=sav_instruction,
+            format_instruction=format_instruction or "(Aucune contrainte de format particuliere.)",
             client_context=client_context
         )
 
-        # 6. Gestion de l'historique et alternance stricte (user -> assistant)
-        #    Si le message n'est pas un follow-up (c-a-d si l'utilisateur change de sujet),
-        #    on n'envoie pas l'historique passe pour eviter les blocages sur d'anciennes reponses.
-        is_followup = _is_contextual_followup(user_message, [])
-        
+        # 6. Historique conversationnel (toujours les 8 derniers messages pour le contexte)
         cleaned_contents = []
-        if is_followup:
-            # Limite l'historique de contexte aux 6 derniers messages maximum (3 tours complets)
-            recent_history = conversation_history[-6:] if conversation_history else []
-            for msg in recent_history:
-                text = msg.get("text", "").strip()
-                if not text:
-                    continue
-                role = "user" if msg.get("role") == "user" else "assistant"
-                if not cleaned_contents:
-                    if role == "user":
-                        cleaned_contents.append({"role": "user", "text": text})
+        recent_history = conversation_history[-8:] if conversation_history else []
+        for msg in recent_history:
+            text = msg.get("text", "").strip()
+            if not text:
+                continue
+            # Ignorer le message utilisateur en cours s'il est deja dans l'historique
+            if msg.get("role") == "user" and text.lower().strip() == user_message.lower().strip():
+                continue
+            role = "user" if msg.get("role") == "user" else "assistant"
+            if not cleaned_contents:
+                if role == "user":
+                    cleaned_contents.append({"role": role, "text": text})
+            else:
+                last_msg = cleaned_contents[-1]
+                if last_msg["role"] == role:
+                    last_msg["text"] += "\n" + text
                 else:
-                    last_msg = cleaned_contents[-1]
-                    if last_msg["role"] == role:
-                        last_msg["text"] += "\n" + text
-                    else:
-                        cleaned_contents.append({"role": role, "text": text})
+                    cleaned_contents.append({"role": role, "text": text})
 
         # Ajouter le message actuel de l'utilisateur
         if cleaned_contents and cleaned_contents[-1]["role"] == "user":
@@ -1172,7 +1686,17 @@ def generate_chatbot_response(client_name, client_email, commerce_name, conversa
         raw_reply = _llm_chat(system_instruction, cleaned_contents, temperature=0.80)
 
         # 8. Valider et assainir la reponse avant de l'afficher
-        validated_reply = validate_and_sanitize_response(raw_reply, intents)
+        validated_reply = validate_and_sanitize_response(raw_reply, intents, is_followup=is_followup)
+        if is_followup and has_contextual_business_intent:
+            reply_start = normalize_text(validated_reply[:120])
+            if any(reply_start.startswith(w) for w in ["bonjour", "bienvenue", "salut", "hello"]):
+                validated_reply = _get_offline_response(
+                    client_name,
+                    client_email,
+                    commerce_name,
+                    conversation_history,
+                    user_message
+                )
 
         # 9. Logs de debogage complets en console
         try:
@@ -1201,5 +1725,3 @@ def generate_chatbot_response(client_name, client_email, commerce_name, conversa
             print(f"[API_ERROR] Erreur inattendue du LLM ({llm_provider}) : {e}. Bascule automatique sur la FAQ locale de secours.")
             
         return _get_offline_response(client_name, client_email, commerce_name, conversation_history, user_message), True
-
-
