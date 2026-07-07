@@ -7,8 +7,31 @@ const {
     sendCampaignEmail,
     getClientCampaignHistory,
     sendGroupCampaign,
-    triggerSmartAutomation
+    triggerSmartAutomation,
+    getCommerces,
+    getGlobalComparison
 } = require('../controllers/rfmController');
+
+const {
+    getReferralStats,
+    getClientReferralDetail,
+    declareReferral
+} = require('../controllers/referralController');
+
+// GET  /api/commerces               → Liste de tous les commerce_id disponibles
+router.get('/commerces', getCommerces);
+
+// GET  /api/referrals/stats        → Statistiques globales du parrainage
+router.get('/referrals/stats', getReferralStats);
+
+// GET  /api/referrals/client/:email → Infos parrainage & paliers d'un client
+router.get('/referrals/client/:email', getClientReferralDetail);
+
+// POST /api/referrals/declare       → Enregistrer un parrainage
+router.post('/referrals/declare', declareReferral);
+
+// GET  /api/global-comparison       → Comparaison globale de toutes les boutiques
+router.get('/global-comparison', getGlobalComparison);
 
 // GET  /api/data                  → Liste de tous les clients RFM
 router.get('/data', getRFMData);

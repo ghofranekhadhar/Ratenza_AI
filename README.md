@@ -1,6 +1,6 @@
-# Ratenza AI — Phase 1 : Connexion MongoDB & Analyse Comportementale RFM
+# Retenza AI — Phase 1 : Connexion MongoDB & Analyse Comportementale RFM
 
-Ce répertoire contient la **première phase** simplifiée de la plateforme de fidélisation client **Ratenza AI**. Ce module est conçu pour être entièrement indépendant, robuste et facile à présenter à votre encadrant de stage.
+Ce répertoire contient la **première phase** simplifiée de la plateforme de fidélisation client **Retenza AI**. Ce module est conçu pour être entièrement indépendant, robuste et facile à présenter à votre encadrant de stage.
 
 Il se concentre sur deux aspects clés :
 1. **La connexion directe et la lecture des données** depuis votre base de données MongoDB (sans mock data dans le code).

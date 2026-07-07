@@ -9,6 +9,7 @@ from config import DEFAULT_WR, DEFAULT_WF, DEFAULT_WM, LOG_LEVEL
 from database import load_clients, load_transactions, save_rfm_results, get_mongo_client
 from rfm import calculate_raw_rfm, normalize_rfm
 from gmm import segment_with_gmm
+from xgboost_churn import predict_churn_risk
 import logging
 
 # Configuration de la journalisation (Logging)
@@ -19,7 +20,7 @@ logger = logging.getLogger("Ratenza_Phase1")
 def print_banner():
     banner = """
 =================================================================
-             RATENZA AI ENGINE — CONFIGURATION PHASE 1
+             ReTENZA AI ENGINE — CONFIGURATION PHASE 1
         (Connexion MongoDB locale & Analyse Comportementale RFM)
 =================================================================
 """
@@ -72,11 +73,20 @@ def run_rfm_pipeline(commerce_id: str):
     # 4.5 Application de la segmentation GMM
     logger.info("Application de la segmentation probabiliste GMM (Gaussian Mixture Model)...")
     rfm_normalized = segment_with_gmm(rfm_normalized, n_components=4)
+
+    # 4.6 Prédiction du risque d'attrition (Churn) avec XGBoost
+    logger.info("Prédiction du risque de churn (attrition) avec XGBoost...")
+    rfm_normalized = predict_churn_risk(rfm_normalized)
     
     # 5. Fusionner les résultats avec les détails des clients (nom et email)
     # Dédoublonner les clients par email pour avoir une seule ligne par personne physique
     clients_unique = clients_df.drop_duplicates(subset=["email"]).copy()
-    results_df = rfm_normalized.merge(clients_unique[["nom", "email", "id"]], left_on="client_id", right_on="email", how="left")
+    
+    cols_to_merge = ["nom", "email", "id"]
+    if "date_naissance" in clients_df.columns:
+        cols_to_merge.append("date_naissance")
+        
+    results_df = rfm_normalized.merge(clients_unique[cols_to_merge], left_on="client_id", right_on="email", how="left")
     results_df = results_df.rename(columns={"id": "client_db_id"})
     
     # Remplacer les valeurs manquantes
@@ -84,6 +94,24 @@ def run_rfm_pipeline(commerce_id: str):
     results_df["email"] = results_df["email"].fillna(results_df["client_id"])
     results_df["client_db_id"] = results_df["client_db_id"].fillna(results_df["client_id"])
     
+    # 5.5 Calcul du score d'influence IA et génération des codes de parrainage
+    logger.info("Calcul du score d'influence IA et génération des codes de parrainage...")
+    # Influence = Sa * 0.7 + (1 - Churn) * 0.3
+    results_df["influence_score"] = (results_df["score_global_sa"] * 0.7 + (1.0 - results_df["churn_score"]) * 0.3) * 100
+    results_df["influence_score"] = results_df["influence_score"].round().astype(int)
+
+    def make_ref_code(row):
+        nom = str(row["nom"]).split(" ")[0]
+        nom_clean = "".join(c for c in nom if c.isalnum()).upper()
+        if not nom_clean:
+            nom_clean = "CL"
+        email_clean = str(row["email"]).split("@")[0]
+        email_clean = "".join(c for c in email_clean if c.isalnum()).upper()
+        suffix = email_clean[-4:] if len(email_clean) >= 4 else email_clean.zfill(4)
+        return f"REF-{nom_clean}-{suffix}"
+
+    results_df["referral_code"] = results_df.apply(make_ref_code, axis=1)
+
     # Trier par score Sa décroissant (les clients les plus fidèles / VIP en premier)
     results_df = results_df.sort_values(by="score_global_sa", ascending=False)
     
@@ -104,20 +132,29 @@ def run_rfm_pipeline(commerce_id: str):
     # 7. Afficher le top 10 des clients avec un tableau propre
     print("TOP 10 CLIENTS (Triés par Score RFM Global Sa)")
     # Sélectionner les colonnes pour un affichage propre
+    churn_cols_available = "churn_score" in results_df.columns and "churn_risk_label" in results_df.columns
     display_cols = [
         "nom", "email", "recency", "frequency", "monetary",
         "score_global_sa", "segment_gmm", "probability_gmm"
     ]
+    if churn_cols_available:
+        display_cols += ["churn_score", "churn_risk_label"]
+
     top_10 = results_df[display_cols].head(10).copy()
     
     # Renommer les colonnes pour la présentation en français
-    top_10.columns = [
+    col_rename = [
         "Nom", "Email", "Récence (J)", "Fréquence", "Montant (DT)",
         "Score Global Sa", "Segment GMM", "Confiance (%)"
     ]
+    if churn_cols_available:
+        col_rename += ["Score Churn", "Risque Churn"]
+    top_10.columns = col_rename
     
     # Format de la probabilité en pourcentage
     top_10["Confiance (%)"] = (top_10["Confiance (%)"] * 100).apply(lambda x: f"{x:.1f}%")
+    if churn_cols_available:
+        top_10["Score Churn"] = (top_10["Score Churn"] * 100).apply(lambda x: f"{x:.1f}%")
     
     print(tabulate(top_10, headers="keys", tablefmt="pretty", showindex=False))
     
@@ -133,7 +170,7 @@ def run_rfm_pipeline(commerce_id: str):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Ratenza AI : Pipeline RFM Simplifié",
+        description="Retenza AI : Pipeline RFM Simplifié",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument(
