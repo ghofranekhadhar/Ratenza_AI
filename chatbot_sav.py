@@ -1015,31 +1015,15 @@ else:
                     var rawText = (btn.textContent || btn.innerText || '').trim();
                     if (rawText !== '📌') return;
 
-                    // Trouver le conteneur de ce bouton PIN
-                    var el = btn;
-                    var pinContainer = null;
-                    while (el && el !== sidebar) {
-                        if (el.parentElement === sidebar || 
-                            (el.parentElement && el.parentElement.getAttribute && 
-                             el.parentElement.getAttribute('data-testid') === 'stVerticalBlock')) {
-                            pinContainer = el;
-                            break;
-                        }
-                        el = el.parentElement;
+                    // Trouver le conteneur element-container de ce bouton PIN et le cacher
+                    var pinContainer = btn.closest('[data-testid="element-container"]') || btn.closest('.element-container') || btn.parentElement;
+                    if (pinContainer) {
+                        pinContainer.style.setProperty('display', 'none', 'important');
+                        pinContainer.style.setProperty('height', '0', 'important');
+                        pinContainer.style.setProperty('overflow', 'hidden', 'important');
+                        pinContainer.style.setProperty('margin', '0', 'important');
+                        pinContainer.style.setProperty('padding', '0', 'important');
                     }
-                    if (!pinContainer) {
-                        // Fallback: utiliser parentElement 3 niveaux au-dessus du bouton
-                        pinContainer = btn.parentElement && btn.parentElement.parentElement 
-                                       ? btn.parentElement.parentElement 
-                                       : btn.parentElement;
-                    }
-
-                    // Cacher le conteneur du bouton PIN
-                    pinContainer.style.setProperty('display', 'none', 'important');
-                    pinContainer.style.setProperty('height', '0', 'important');
-                    pinContainer.style.setProperty('overflow', 'hidden', 'important');
-                    pinContainer.style.setProperty('margin', '0', 'important');
-                    pinContainer.style.setProperty('padding', '0', 'important');
 
                     // Trouver le conteneur nav PRÉCÉDENT (sibling)
                     var navContainer = pinContainer.previousElementSibling;
