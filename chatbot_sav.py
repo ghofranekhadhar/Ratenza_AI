@@ -361,10 +361,93 @@ st.markdown("""
         .chat-card-snippet strong {
             color: #0f172a !important;
             font-weight: 600 !important;
-            background-color: rgba(254, 240, 138, 0.4) !important; /* Jaune très léger pour le mot surligné */
+            background-color: rgba(254, 240, 138, 0.4) !important;
             padding: 0 2px !important;
             border-radius: 2px !important;
         }
+
+        /* ====== LIGNE DE CONVERSATION AVEC ICONE EPINGLE ====== */
+        .conv-row-wrapper {
+            position: relative !important;
+            margin-bottom: 2px !important;
+            width: 100% !important;
+            border-radius: 8px !important;
+        }
+        .conv-row-html {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: 8px 10px !important;
+            border-radius: 8px !important;
+            background-color: transparent !important;
+            transition: background-color 0.15s ease !important;
+            pointer-events: none !important;
+        }
+        .conv-row-wrapper:hover .conv-row-html {
+            background-color: #ececec !important;
+        }
+        .conv-row-left {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            flex: 1 !important;
+            min-width: 0 !important;
+        }
+        .conv-row-title {
+            font-size: 0.83rem !important;
+            font-weight: 500 !important;
+            color: #0f172a !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            flex: 1 !important;
+        }
+        /* Icône épingle : grise par défaut, visible au hover ou si épinglée */
+        .conv-pin-icon {
+            opacity: 0 !important;
+            transition: opacity 0.15s ease, color 0.15s ease !important;
+            font-size: 0.85rem !important;
+            color: #9ca3af !important;
+            flex-shrink: 0 !important;
+            line-height: 1 !important;
+        }
+        .conv-row-wrapper:hover .conv-pin-icon {
+            opacity: 1 !important;
+        }
+        .conv-pin-icon.pinned {
+            opacity: 1 !important;
+            color: #ea580c !important;  /* Orange = épinglé */
+        }
+        /* Bouton navigation transparent (toute la largeur) */
+        .conv-row-wrapper .stButton:nth-of-type(1) > button {
+            position: absolute !important;
+            inset: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            opacity: 0 !important;
+            cursor: pointer !important;
+            padding: 0 !important;
+            z-index: 2 !important;
+        }
+        /* Bouton épingle transparent (zone droite 36px) */
+        .conv-row-wrapper .stButton:nth-of-type(2) > button {
+            position: absolute !important;
+            top: 0 !important;
+            right: 0 !important;
+            width: 36px !important;
+            height: 100% !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            opacity: 0 !important;
+            cursor: pointer !important;
+            padding: 0 !important;
+            z-index: 3 !important;
+        }
+
         /* ====== EMPTY STATE (Nouvelle Conversation) ====== */
         .empty-state-container {
             display: flex;
@@ -862,30 +945,155 @@ else:
         else:
             pinned_sessions = [s for s in all_sessions if s.get("is_pinned", False)]
             recent_sessions = [s for s in all_sessions if not s.get("is_pinned", False)]
-            # 1. Section des conversations épinglées
+
+            def render_conv_row(s, is_pinned_item):
+                is_active = (s["session_id"] == st.session_state.session_id)
+                lbl = ("● " if is_active else "") + s["title"]
+                nav_icon = ":material/push_pin:" if is_pinned_item else ":material/chat_bubble_outline:"
+
+                # Bouton navigation principal
+                if st.button(lbl, icon=nav_icon, key=f"nav_{s['session_id']}", use_container_width=True):
+                    st.session_state.session_id = s["session_id"]
+                    st.rerun()
+
+                # Bouton pin — label 📌 uniquement
+                # → Identifiable par JS via le texte '📌', caché et rewired comme icône au survol
+                if st.button("📌", key=f"pin_{s['session_id']}"):
+                    toggle_pin_session(
+                        st.session_state.email,
+                        st.session_state.commerce_id,
+                        s["session_id"]
+                    )
+                    st.rerun()
+
+            # 1. Section épinglés
             if pinned_sessions:
                 st.markdown("**Épinglés**")
                 for s in pinned_sessions:
-                    is_active = (s["session_id"] == st.session_state.session_id)
-                    lbl = ("● " if is_active else "") + s["title"]
-                    if st.button(lbl, icon=":material/push_pin:", key=f"pbtn_{s['session_id']}", use_container_width=True):
-                        st.session_state.session_id = s["session_id"]
-                        st.rerun()
+                    render_conv_row(s, is_pinned_item=True)
                 st.write("")
-                
-            # 2. Section des conversations récentes
+
+            # 2. Section récents
             if recent_sessions:
                 st.markdown("**Récents**")
                 for s in recent_sessions:
-                    is_active = (s["session_id"] == st.session_state.session_id)
-                    lbl = ("● " if is_active else "") + s["title"]
-                    if st.button(lbl, icon=":material/chat_bubble:", key=f"rbtn_{s['session_id']}", use_container_width=True):
-                        st.session_state.session_id = s["session_id"]
-                        st.rerun()
+                    render_conv_row(s, is_pinned_item=False)
             else:
                 st.markdown("**Récents**")
                 st.caption("Aucune conversation")
                 
+        # === JS pour icône épingle au survol de chaque conversation ===
+        st.markdown("""
+        <style>
+        .sidebar-pin-icon {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.85rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            z-index: 50;
+            user-select: none;
+            line-height: 1;
+            padding: 4px;
+            border-radius: 4px;
+        }
+        .sidebar-pin-icon.always-visible { opacity: 1 !important; color: #ea580c !important; }
+        .sidebar-pin-icon:hover { background-color: rgba(0,0,0,0.06); }
+        </style>
+        <script>
+        (function() {
+            function setupPinIcons() {
+                var sidebar = document.querySelector('[data-testid="stSidebar"]');
+                if (!sidebar) return;
+
+                var allBtns = sidebar.querySelectorAll('button');
+                allBtns.forEach(function(btn) {
+                    // Identifier les boutons PIN : texte exactement égal à '📌'
+                    var rawText = (btn.textContent || btn.innerText || '').trim();
+                    if (rawText !== '📌') return;
+
+                    // Trouver le conteneur de ce bouton PIN
+                    var el = btn;
+                    var pinContainer = null;
+                    while (el && el !== sidebar) {
+                        if (el.parentElement === sidebar || 
+                            (el.parentElement && el.parentElement.getAttribute && 
+                             el.parentElement.getAttribute('data-testid') === 'stVerticalBlock')) {
+                            pinContainer = el;
+                            break;
+                        }
+                        el = el.parentElement;
+                    }
+                    if (!pinContainer) {
+                        // Fallback: utiliser parentElement 3 niveaux au-dessus du bouton
+                        pinContainer = btn.parentElement && btn.parentElement.parentElement 
+                                       ? btn.parentElement.parentElement 
+                                       : btn.parentElement;
+                    }
+
+                    // Cacher le conteneur du bouton PIN
+                    pinContainer.style.setProperty('display', 'none', 'important');
+                    pinContainer.style.setProperty('height', '0', 'important');
+                    pinContainer.style.setProperty('overflow', 'hidden', 'important');
+                    pinContainer.style.setProperty('margin', '0', 'important');
+                    pinContainer.style.setProperty('padding', '0', 'important');
+
+                    // Trouver le conteneur nav PRÉCÉDENT (sibling)
+                    var navContainer = pinContainer.previousElementSibling;
+                    if (!navContainer) return;
+                    var navBtn = navContainer.querySelector('button');
+                    if (!navBtn) return;
+
+                    // Éviter doublons
+                    if (navContainer.querySelector('.sidebar-pin-icon')) return;
+
+                    // Déterminer si épinglé (nav btn a l'icône push_pin material)
+                    var isPinned = navBtn.querySelector('[data-testid*="push_pin"]') !== null
+                                || navBtn.innerHTML.includes('push_pin');
+
+                    // Créer l'icône épingle flottante (SVG premium Lucide-style)
+                    navContainer.style.position = 'relative';
+                    var icon = document.createElement('span');
+                    icon.className = 'sidebar-pin-icon' + (isPinned ? ' always-visible' : '');
+                    
+                    // SVG Pin
+                    var pinSvg = isPinned 
+                        ? '<svg viewBox="0 0 24 24" width="14" height="14" stroke="#ea580c" stroke-width="2" fill="#ea580c" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M12 17v5M9 8h6M5 12h14M15 8V3H9v5M19 12l-4-4M5 12l4-4"/></svg>'
+                        : '<svg viewBox="0 0 24 24" width="14" height="14" stroke="#9ca3af" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M12 17v5M9 8h6M5 12h14M15 8V3H9v5M19 12l-4-4M5 12l4-4"/></svg>';
+                    
+                    icon.innerHTML = pinSvg;
+                    icon.title = isPinned ? 'Désépingler' : 'Épingler';
+                    navContainer.appendChild(icon);
+
+                    navContainer.addEventListener('mouseenter', function() {
+                        if (!icon.classList.contains('always-visible')) {
+                            icon.style.opacity = '1';
+                        }
+                    });
+                    navContainer.addEventListener('mouseleave', function() {
+                        if (!icon.classList.contains('always-visible')) {
+                            icon.style.opacity = '0';
+                        }
+                    });
+
+                    icon.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        btn.click();
+                    });
+                });
+            }
+
+            setTimeout(setupPinIcons, 400);
+            setTimeout(setupPinIcons, 1200);
+            setInterval(setupPinIcons, 3500);
+        })();
+        </script>
+        """, unsafe_allow_html=True)
+
         # Récupération et formitage des infos du profil
         client_name = st.session_state.get("client_name", "Client")
         initials = "".join([part[0].upper() for part in client_name.split()[:2]]) if client_name else "GH"
