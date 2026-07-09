@@ -367,24 +367,15 @@ st.markdown("""
         }
 
         /* ====== LIGNE DE CONVERSATION AVEC ICONE EPINGLE VIA COLUMNS ====== */
-        /* Cacher la div marqueur */
-        div.element-container:has(.conv-row-marker) {
+        /* Cacher uniquement le conteneur stMarkdownContainer des marqueurs, sans masquer les colonnes */
+        div[data-testid="stMarkdownContainer"]:has(.conv-row-marker),
+        div[data-testid="stMarkdownContainer"]:has(.pinned-flag),
+        div[data-testid="stMarkdownContainer"]:has(.unpinned-flag) {
             display: none !important;
-            height: 0px !important;
-            margin: 0px !important;
-            padding: 0px !important;
-        }
-        /* Cacher la div marqueur de statut épingle */
-        div.element-container:has(.pinned-flag),
-        div.element-container:has(.unpinned-flag) {
-            display: none !important;
-            height: 0px !important;
-            margin: 0px !important;
-            padding: 0px !important;
         }
 
         /* Personnalisation du block horizontal des colonnes de la conversation */
-        div.element-container:has(.conv-row-marker) + div[data-testid="stHorizontalBlock"] {
+        div.element-container:has(.conv-row-marker) + div.element-container div[data-testid="stHorizontalBlock"] {
             gap: 0px !important;
             align-items: center !important;
             border-radius: 8px !important;
@@ -396,12 +387,12 @@ st.markdown("""
         }
 
         /* Hover de la ligne entière */
-        div.element-container:has(.conv-row-marker) + div[data-testid="stHorizontalBlock"]:hover {
+        div.element-container:has(.conv-row-marker) + div.element-container div[data-testid="stHorizontalBlock"]:hover {
             background-color: #ececec !important;
         }
 
         /* Supprimer les styles par défaut des boutons de la ligne */
-        div.element-container:has(.conv-row-marker) + div[data-testid="stHorizontalBlock"] button {
+        div.element-container:has(.conv-row-marker) + div.element-container div[data-testid="stHorizontalBlock"] button {
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
@@ -412,14 +403,14 @@ st.markdown("""
         }
 
         /* Bouton nav principal : alignement gauche et largeur 100% */
-        div.element-container:has(.conv-row-marker) + div[data-testid="stHorizontalBlock"] div[data-testid="column"]:first-child button {
+        div.element-container:has(.conv-row-marker) + div.element-container div[data-testid="stHorizontalBlock"] div[data-testid="column"]:first-child button {
             width: 100% !important;
             justify-content: flex-start !important;
             text-align: left !important;
         }
 
         /* Bouton pin (deuxième colonne) : masqué par défaut, centré */
-        div.element-container:has(.conv-row-marker) + div[data-testid="stHorizontalBlock"] div[data-testid="column"]:last-child button {
+        div.element-container:has(.conv-row-marker) + div.element-container div[data-testid="stHorizontalBlock"] div[data-testid="column"]:last-child button {
             opacity: 0;
             width: 32px !important;
             min-width: 32px !important;
@@ -430,13 +421,13 @@ st.markdown("""
         }
 
         /* Afficher le bouton pin au hover de la ligne */
-        div.element-container:has(.conv-row-marker) + div[data-testid="stHorizontalBlock"]:hover div[data-testid="column"]:last-child button {
+        div.element-container:has(.conv-row-marker) + div.element-container div[data-testid="stHorizontalBlock"]:hover div[data-testid="column"]:last-child button {
             opacity: 1 !important;
             color: #9ca3af !important;
         }
 
         /* Si la ligne contient le flag de conversation épinglée, l'icône pin est orange et toujours visible */
-        div.element-container:has(.conv-row-marker) + div[data-testid="stHorizontalBlock"]:has(.pinned-flag) div[data-testid="column"]:last-child button {
+        div.element-container:has(.conv-row-marker) + div.element-container div[data-testid="stHorizontalBlock"]:has(.pinned-flag) div[data-testid="column"]:last-child button {
             opacity: 1 !important;
             color: #ea580c !important; /* Orange */
         }
