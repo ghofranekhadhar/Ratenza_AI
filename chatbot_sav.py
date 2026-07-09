@@ -366,86 +366,79 @@ st.markdown("""
             border-radius: 2px !important;
         }
 
-        /* ====== LIGNE DE CONVERSATION AVEC ICONE EPINGLE ====== */
-        .conv-row-wrapper {
-            position: relative !important;
-            margin-bottom: 2px !important;
-            width: 100% !important;
-            border-radius: 8px !important;
+        /* ====== LIGNE DE CONVERSATION AVEC ICONE EPINGLE VIA COLUMNS ====== */
+        /* Cacher la div marqueur */
+        div.element-container:has(.conv-row-marker) {
+            display: none !important;
+            height: 0px !important;
+            margin: 0px !important;
+            padding: 0px !important;
         }
-        .conv-row-html {
-            display: flex !important;
+        /* Cacher la div marqueur de statut épingle */
+        div.element-container:has(.pinned-flag),
+        div.element-container:has(.unpinned-flag) {
+            display: none !important;
+            height: 0px !important;
+            margin: 0px !important;
+            padding: 0px !important;
+        }
+
+        /* Personnalisation du block horizontal des colonnes de la conversation */
+        div.element-container:has(.conv-row-marker) + div[data-testid="stHorizontalBlock"] {
+            gap: 0px !important;
             align-items: center !important;
-            justify-content: space-between !important;
-            padding: 8px 10px !important;
             border-radius: 8px !important;
+            padding: 2px 4px !important;
+            margin-bottom: 2px !important;
+            margin-top: 2px !important;
             background-color: transparent !important;
             transition: background-color 0.15s ease !important;
-            pointer-events: none !important;
         }
-        .conv-row-wrapper:hover .conv-row-html {
+
+        /* Hover de la ligne entière */
+        div.element-container:has(.conv-row-marker) + div[data-testid="stHorizontalBlock"]:hover {
             background-color: #ececec !important;
         }
-        .conv-row-left {
-            display: flex !important;
-            align-items: center !important;
-            gap: 8px !important;
-            flex: 1 !important;
-            min-width: 0 !important;
+
+        /* Supprimer les styles par défaut des boutons de la ligne */
+        div.element-container:has(.conv-row-marker) + div[data-testid="stHorizontalBlock"] button {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            height: 32px !important;
+            padding: 4px 8px !important;
+            border-radius: 6px !important;
         }
-        .conv-row-title {
-            font-size: 0.83rem !important;
-            font-weight: 500 !important;
-            color: #0f172a !important;
-            white-space: nowrap !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-            flex: 1 !important;
-        }
-        /* Icône épingle : grise par défaut, visible au hover ou si épinglée */
-        .conv-pin-icon {
-            opacity: 0 !important;
-            transition: opacity 0.15s ease, color 0.15s ease !important;
-            font-size: 0.85rem !important;
-            color: #9ca3af !important;
-            flex-shrink: 0 !important;
-            line-height: 1 !important;
-        }
-        .conv-row-wrapper:hover .conv-pin-icon {
-            opacity: 1 !important;
-        }
-        .conv-pin-icon.pinned {
-            opacity: 1 !important;
-            color: #ea580c !important;  /* Orange = épinglé */
-        }
-        /* Bouton navigation transparent (toute la largeur) */
-        .conv-row-wrapper .stButton:nth-of-type(1) > button {
-            position: absolute !important;
-            inset: 0 !important;
+
+        /* Bouton nav principal : alignement gauche et largeur 100% */
+        div.element-container:has(.conv-row-marker) + div[data-testid="stHorizontalBlock"] div[data-testid="column"]:first-child button {
             width: 100% !important;
-            height: 100% !important;
-            background: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            opacity: 0 !important;
-            cursor: pointer !important;
-            padding: 0 !important;
-            z-index: 2 !important;
+            justify-content: flex-start !important;
+            text-align: left !important;
         }
-        /* Bouton épingle transparent (zone droite 36px) */
-        .conv-row-wrapper .stButton:nth-of-type(2) > button {
-            position: absolute !important;
-            top: 0 !important;
-            right: 0 !important;
-            width: 36px !important;
-            height: 100% !important;
-            background: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            opacity: 0 !important;
-            cursor: pointer !important;
-            padding: 0 !important;
-            z-index: 3 !important;
+
+        /* Bouton pin (deuxième colonne) : masqué par défaut, centré */
+        div.element-container:has(.conv-row-marker) + div[data-testid="stHorizontalBlock"] div[data-testid="column"]:last-child button {
+            opacity: 0;
+            width: 32px !important;
+            min-width: 32px !important;
+            display: inline-flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            transition: opacity 0.15s ease, color 0.15s ease !important;
+        }
+
+        /* Afficher le bouton pin au hover de la ligne */
+        div.element-container:has(.conv-row-marker) + div[data-testid="stHorizontalBlock"]:hover div[data-testid="column"]:last-child button {
+            opacity: 1 !important;
+            color: #9ca3af !important;
+        }
+
+        /* Si la ligne contient le flag de conversation épinglée, l'icône pin est orange et toujours visible */
+        div.element-container:has(.conv-row-marker) + div[data-testid="stHorizontalBlock"]:has(.pinned-flag) div[data-testid="column"]:last-child button {
+            opacity: 1 !important;
+            color: #ea580c !important; /* Orange */
         }
 
         /* ====== EMPTY STATE (Nouvelle Conversation) ====== */
@@ -949,22 +942,30 @@ else:
             def render_conv_row(s, is_pinned_item):
                 is_active = (s["session_id"] == st.session_state.session_id)
                 lbl = ("● " if is_active else "") + s["title"]
-                nav_icon = ":material/push_pin:" if is_pinned_item else ":material/chat_bubble_outline:"
+                session_key = s["session_id"]
 
-                # Bouton navigation principal
-                if st.button(lbl, icon=nav_icon, key=f"nav_{s['session_id']}", use_container_width=True):
-                    st.session_state.session_id = s["session_id"]
-                    st.rerun()
+                # Insérer un marqueur HTML pour cibler les colonnes avec le CSS
+                st.markdown('<div class="conv-row-marker"></div>', unsafe_allow_html=True)
+                
+                col_title, col_pin = st.columns([5.5, 1])
 
-                # Bouton pin — label 📌 uniquement
-                # → Identifiable par JS via le texte '📌', caché et rewired comme icône au survol
-                if st.button("📌", key=f"pin_{s['session_id']}"):
-                    toggle_pin_session(
-                        st.session_state.email,
-                        st.session_state.commerce_id,
-                        s["session_id"]
-                    )
-                    st.rerun()
+                with col_title:
+                    nav_icon = ":material/push_pin:" if is_pinned_item else ":material/chat_bubble_outline:"
+                    if st.button(lbl, icon=nav_icon, key=f"nav_{session_key}", use_container_width=True):
+                        st.session_state.session_id = session_key
+                        st.rerun()
+
+                with col_pin:
+                    # Injecter le flag de statut épinglé
+                    pin_class = "pinned-flag" if is_pinned_item else "unpinned-flag"
+                    st.markdown(f'<div class="{pin_class}"></div>', unsafe_allow_html=True)
+                    if st.button("", icon=":material/push_pin:", key=f"pin_{session_key}", use_container_width=True):
+                        toggle_pin_session(
+                            st.session_state.email,
+                            st.session_state.commerce_id,
+                            session_key
+                        )
+                        st.rerun()
 
             # 1. Section épinglés
             if pinned_sessions:
@@ -982,101 +983,7 @@ else:
                 st.markdown("**Récents**")
                 st.caption("Aucune conversation")
                 
-        # === JS pour icône épingle au survol de chaque conversation ===
-        st.markdown("""
-        <style>
-        .sidebar-pin-icon {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 0.85rem;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.15s ease;
-            z-index: 50;
-            user-select: none;
-            line-height: 1;
-            padding: 4px;
-            border-radius: 4px;
-        }
-        .sidebar-pin-icon.always-visible { opacity: 1 !important; color: #ea580c !important; }
-        .sidebar-pin-icon:hover { background-color: rgba(0,0,0,0.06); }
-        </style>
-        <script>
-        (function() {
-            function setupPinIcons() {
-                var sidebar = document.querySelector('[data-testid="stSidebar"]');
-                if (!sidebar) return;
 
-                var allBtns = sidebar.querySelectorAll('button');
-                allBtns.forEach(function(btn) {
-                    // Identifier les boutons PIN : texte exactement égal à '📌'
-                    var rawText = (btn.textContent || btn.innerText || '').trim();
-                    if (rawText !== '📌') return;
-
-                    // Trouver le conteneur element-container de ce bouton PIN et le cacher
-                    var pinContainer = btn.closest('[data-testid="element-container"]') || btn.closest('.element-container') || btn.parentElement;
-                    if (pinContainer) {
-                        pinContainer.style.setProperty('display', 'none', 'important');
-                        pinContainer.style.setProperty('height', '0', 'important');
-                        pinContainer.style.setProperty('overflow', 'hidden', 'important');
-                        pinContainer.style.setProperty('margin', '0', 'important');
-                        pinContainer.style.setProperty('padding', '0', 'important');
-                    }
-
-                    // Trouver le conteneur nav PRÉCÉDENT (sibling)
-                    var navContainer = pinContainer.previousElementSibling;
-                    if (!navContainer) return;
-                    var navBtn = navContainer.querySelector('button');
-                    if (!navBtn) return;
-
-                    // Éviter doublons
-                    if (navContainer.querySelector('.sidebar-pin-icon')) return;
-
-                    // Déterminer si épinglé (nav btn a l'icône push_pin material)
-                    var isPinned = navBtn.querySelector('[data-testid*="push_pin"]') !== null
-                                || navBtn.innerHTML.includes('push_pin');
-
-                    // Créer l'icône épingle flottante (SVG premium Lucide-style)
-                    navContainer.style.position = 'relative';
-                    var icon = document.createElement('span');
-                    icon.className = 'sidebar-pin-icon' + (isPinned ? ' always-visible' : '');
-                    
-                    // SVG Pin
-                    var pinSvg = isPinned 
-                        ? '<svg viewBox="0 0 24 24" width="14" height="14" stroke="#ea580c" stroke-width="2" fill="#ea580c" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M12 17v5M9 8h6M5 12h14M15 8V3H9v5M19 12l-4-4M5 12l4-4"/></svg>'
-                        : '<svg viewBox="0 0 24 24" width="14" height="14" stroke="#9ca3af" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M12 17v5M9 8h6M5 12h14M15 8V3H9v5M19 12l-4-4M5 12l4-4"/></svg>';
-                    
-                    icon.innerHTML = pinSvg;
-                    icon.title = isPinned ? 'Désépingler' : 'Épingler';
-                    navContainer.appendChild(icon);
-
-                    navContainer.addEventListener('mouseenter', function() {
-                        if (!icon.classList.contains('always-visible')) {
-                            icon.style.opacity = '1';
-                        }
-                    });
-                    navContainer.addEventListener('mouseleave', function() {
-                        if (!icon.classList.contains('always-visible')) {
-                            icon.style.opacity = '0';
-                        }
-                    });
-
-                    icon.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        btn.click();
-                    });
-                });
-            }
-
-            setTimeout(setupPinIcons, 400);
-            setTimeout(setupPinIcons, 1200);
-            setInterval(setupPinIcons, 3500);
-        })();
-        </script>
-        """, unsafe_allow_html=True)
 
         # Récupération et formitage des infos du profil
         client_name = st.session_state.get("client_name", "Client")
