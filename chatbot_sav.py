@@ -188,8 +188,8 @@ st.markdown("""
             padding-bottom: 80px !important;
         }
         
-        /* Cible uniquement le popover de profil (dernier élément du bloc vertical) */
-        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div:last-child {
+        /* Cible uniquement le popover de profil (dernier élément du bloc vertical principal) */
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child {
             position: absolute !important;
             bottom: 20px !important;
             left: 10px !important;
@@ -198,7 +198,7 @@ st.markdown("""
             z-index: 1000 !important;
         }
         
-        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div:last-child [data-testid="stPopover"] > button {
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child [data-testid="stPopover"] > button {
             background-color: transparent !important;
             border: none !important;
             color: #0d0d0d !important;
@@ -214,7 +214,7 @@ st.markdown("""
             font-size: 0.9rem !important;
             font-weight: 600 !important;
         }
-        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div:last-child [data-testid="stPopover"] > button:hover {
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child [data-testid="stPopover"] > button:hover {
             background-color: #ececec !important;
         }
         
@@ -892,6 +892,12 @@ else:
             search_query=search_query if search_query else None
         )
         
+        # Log temporaire diagnostique
+        print(f"[DIAGNOSTIC] Utilisateur : {st.session_state.email}, Boutique : {st.session_state.commerce_id}")
+        print(f"[DIAGNOSTIC] Nombre de sessions récupérées en base : {len(all_sessions)}")
+        for idx, s in enumerate(all_sessions):
+            print(f"  - Session {idx}: id={s['session_id']}, title={s['title']}, is_pinned={s.get('is_pinned', False)}")
+        
         # Option d'épinglage supprimée d'ici car intégrée dans le menu des 3 points (comme ChatGPT)
             
         # Si recherche active, on affiche les résultats formatés avec extraits de texte
@@ -985,8 +991,8 @@ else:
         # Injecter dynamiquement l'avatar initiales en CSS pour le bouton popover profil UNIQUEMENT
         st.markdown(f"""
             <style>
-                /* Cible uniquement le dernier popover de la sidebar (profil), pas les ··· de sessions */
-                [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button::before {{
+                /* Cible uniquement le dernier popover de la sidebar principale (profil), pas les colonnes */
+                [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button::before {{
                     content: "{initials}";
                     width: 32px;
                     height: 32px;
