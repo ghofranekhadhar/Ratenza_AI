@@ -292,21 +292,28 @@ st.markdown("""
         }
 
         /* En-têtes de section et séparateurs de la sidebar */
+        /* Le div.sidebar-section-header est rendu dans un element-container Streamlit. */
+        /* On NE PAS utiliser padding-top car Streamlit peut couper le contenu paddingé via overflow:hidden. */
+        /* À la place, on met min-height sur l'element-container parent du markdown de section. */
+        div.element-container:has(.sidebar-section-header) {
+            min-height: 36px !important;
+            display: flex !important;
+            align-items: flex-end !important;
+            overflow: visible !important;
+        }
         .sidebar-section-header {
             font-size: 0.78rem !important;
             font-weight: 600 !important;
             color: #6b7280 !important;
-            padding-top: 14px !important;  /* Évite la coupure par overflow: hidden */
-            margin-top: 0px !important;
-            padding-bottom: 6px !important; /* Espace entre le titre et le 1er item */
-            padding-left: 8px !important;
+            padding: 0 0 4px 8px !important;
+            margin: 0 !important;
             text-transform: uppercase !important;
             letter-spacing: 0.05em !important;
             display: block !important;
+            line-height: 1.4 !important;
         }
         .sidebar-divider {
-            margin: 0px 0 0px 0 !important;
-            padding-top: 10px !important;
+            margin: 4px 0 !important;
             border: none !important;
             border-top: 1px solid #e5e5e5 !important;
             opacity: 0.6 !important;
@@ -470,7 +477,8 @@ st.markdown("""
         }
 
         /* Réduire la taille des éléments de la sidebar pour plus de densité */
-        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+        /* IMPORTANT: utiliser > pour ne cibler QUE le premier niveau, pas les stVerticalBlock dans les colonnes */
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] {
             gap: 2px !important;
         }
 
@@ -1104,7 +1112,8 @@ else:
 
             # 1. Section épinglés
             if pinned_sessions:
-                st.markdown('<div class="sidebar-section-header">Épinglés</div>', unsafe_allow_html=True)
+                # Spacer + header dans un seul bloc markdown pour garantir la visibilité
+                st.markdown('<div style="height:12px;"></div><div class="sidebar-section-header">Épinglés</div>', unsafe_allow_html=True)
                 for s in pinned_sessions:
                     render_conv_row(s, is_pinned_item=True)
                 # Ligne de séparation fine entre les deux sections
@@ -1112,11 +1121,11 @@ else:
 
             # 2. Section récents
             if recent_sessions:
-                st.markdown('<div class="sidebar-section-header">Récents</div>', unsafe_allow_html=True)
+                st.markdown('<div style="height:12px;"></div><div class="sidebar-section-header">Récents</div>', unsafe_allow_html=True)
                 for s in recent_sessions:
                     render_conv_row(s, is_pinned_item=False)
             else:
-                st.markdown('<div class="sidebar-section-header">Récents</div>', unsafe_allow_html=True)
+                st.markdown('<div style="height:12px;"></div><div class="sidebar-section-header">Récents</div>', unsafe_allow_html=True)
                 st.caption("Aucune conversation")
                 
 
