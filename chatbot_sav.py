@@ -196,18 +196,36 @@ st.markdown("""
         }
 
         /* ====== SIDEBAR PROFILE POPOVER (Style ChatGPT) ====== */
+        /* Conteneur principal : position relative pour que le last-child absolute soit bien ancré */
         [data-testid="stSidebarUserContent"] {
-            padding-bottom: 80px !important;
+            position: relative !important;
+            height: 100vh !important;
+            overflow: hidden !important;
+        }
+
+        /* La zone de contenu scrollable de la sidebar (tout sauf le bouton profil) */
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] {
+            height: calc(100vh - 90px) !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            padding-bottom: 4px !important;
+            /* Masquer la scrollbar visuellement (gardee fonctionnelle) */
+            scrollbar-width: none !important;
+        }
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"]::-webkit-scrollbar {
+            display: none !important;
         }
         
-        /* Cible uniquement le popover de profil (dernier élément du bloc vertical principal) */
+        /* Bouton profil toujours ancré en bas de la sidebar */
         [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child {
-            position: absolute !important;
-            bottom: 20px !important;
-            left: 10px !important;
-            right: 10px !important;
-            width: calc(100% - 20px) !important;
+            position: fixed !important;
+            bottom: 12px !important;
+            left: 0px !important;
+            width: var(--sidebar-width, 242px) !important;
+            padding: 0 12px !important;
             z-index: 1000 !important;
+            background-color: #f9f9f9 !important;
+            box-sizing: border-box !important;
         }
         
         [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child [data-testid="stPopover"] > button {
@@ -278,16 +296,17 @@ st.markdown("""
             font-size: 0.78rem !important;
             font-weight: 600 !important;
             color: #6b7280 !important;
-            padding-top: 14px !important; /* Utiliser padding-top pour éviter la coupure par overflow: hidden de Streamlit */
+            padding-top: 14px !important;  /* Évite la coupure par overflow: hidden */
             margin-top: 0px !important;
-            margin-bottom: 4px !important;
+            padding-bottom: 6px !important; /* Espace entre le titre et le 1er item */
             padding-left: 8px !important;
             text-transform: uppercase !important;
             letter-spacing: 0.05em !important;
+            display: block !important;
         }
         .sidebar-divider {
-            margin: 0px 0 4px 0 !important;
-            padding-top: 10px !important; /* Utiliser padding-top et border-top pour éviter les coupures */
+            margin: 0px 0 0px 0 !important;
+            padding-top: 10px !important;
             border: none !important;
             border-top: 1px solid #e5e5e5 !important;
             opacity: 0.6 !important;
