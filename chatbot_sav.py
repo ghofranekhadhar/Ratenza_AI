@@ -278,14 +278,16 @@ st.markdown("""
             font-size: 0.78rem !important;
             font-weight: 600 !important;
             color: #6b7280 !important;
-            margin-top: 12px !important;
+            padding-top: 14px !important; /* Utiliser padding-top pour éviter la coupure par overflow: hidden de Streamlit */
+            margin-top: 0px !important;
             margin-bottom: 4px !important;
             padding-left: 8px !important;
             text-transform: uppercase !important;
             letter-spacing: 0.05em !important;
         }
         .sidebar-divider {
-            margin: 10px 0 4px 0 !important;
+            margin: 0px 0 4px 0 !important;
+            padding-top: 10px !important; /* Utiliser padding-top et border-top pour éviter les coupures */
             border: none !important;
             border-top: 1px solid #e5e5e5 !important;
             opacity: 0.6 !important;
@@ -463,6 +465,16 @@ st.markdown("""
             margin-top: 0px !important;
             background-color: transparent !important;
             transition: background-color 0.15s ease !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Enlever tout fond/bordure/ombre des colonnes de conversation */
+        [data-testid="stSidebar"] div.element-container:has(.conv-row-marker) + div.element-container [data-testid="stHorizontalBlock"],
+        [data-testid="stSidebar"] div.element-container:has(.conv-row-marker) + div.element-container [data-testid="column"] {
+            background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
         }
 
         /* Hover de la ligne entière */
@@ -479,6 +491,7 @@ st.markdown("""
             height: 30px !important;
             padding: 2px 6px !important;
             border-radius: 6px !important;
+            outline: none !important;
         }
 
         /* Bouton nav principal : alignement gauche et largeur 100% */
@@ -488,14 +501,21 @@ st.markdown("""
             text-align: left !important;
         }
 
-        /* Bouton pin (deuxième colonne) : masqué par défaut (opacité 0), visible au survol */
+        /* Bouton pin (deuxième colonne) : masqué par défaut (opacité 0), sans bordure, visible au survol */
         div.element-container:has(.conv-row-marker) + div.element-container div[data-testid="stHorizontalBlock"] div[data-testid="column"]:last-child button {
             opacity: 0 !important;
             width: 28px !important;
             min-width: 28px !important;
+            height: 30px !important;
             display: inline-flex !important;
             justify-content: center !important;
             align-items: center !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            outline: none !important;
             transition: opacity 0.15s ease, color 0.15s ease !important;
         }
 
@@ -641,6 +661,22 @@ MESSAGES AYANT DÉCLENCHÉ LES AVERTISSEMENTS :
 # =====================================================================
 # GESTION DES SESSIONS CLIENTS (DANS MONGODB)
 # =====================================================================
+def clean_title(title):
+    """Nettoie le titre de la session (retire les emojis, les puces, les espaces superflus) et met en majuscule le premier caractère."""
+    if not title:
+        return "Nouvelle conversation"
+    
+    title = title.strip()
+    cleaned = ""
+    for char in title:
+        # Conserver les caractères standard (ord < 127) et latins accentués (ord entre 192 et 383)
+        if ord(char) < 127 or (192 <= ord(char) <= 383):
+            cleaned += char
+            
+    # Nettoyer les puces ou espaces résiduels
+    cleaned = cleaned.strip("● \t\n\r-_.")
+    return cleaned.capitalize() if cleaned else "Nouvelle conversation"
+
 def get_client_status(email, commerce_id, client_name="Client"):
     """Récupère ou initialise l'état de blocage et warnings d'un client."""
     if not db_client:
@@ -999,7 +1035,7 @@ else:
                             <div class="chat-card-html">
                                 <span class="chat-card-icon">💬</span>
                                 <div class="chat-card-body">
-                                    <div class="chat-card-title">{title_prefix}{s['title']}</div>
+                                    <div class="chat-card-title">{title_prefix}{clean_title(s['title'])}</div>
                                     <div class="chat-card-snippet">{snippet}</div>
                                 </div>
                             </div>
@@ -1020,8 +1056,8 @@ else:
 
             def render_conv_row(s, is_pinned_item):
                 is_active = (s["session_id"] == st.session_state.session_id)
-                # Normaliser la casse : majuscule uniquement en début de phrase
-                title_clean = s["title"].strip().capitalize() if s["title"] else "Nouvelle conversation"
+                # Nettoyer et normaliser le titre (retirer emojis, puces, majuscule début)
+                title_clean = clean_title(s["title"])
                 lbl = ("● " if is_active else "") + title_clean
                 session_key = s["session_id"]
 
