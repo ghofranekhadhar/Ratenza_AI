@@ -74,7 +74,9 @@ st.markdown("""
         }
         [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3, [data-testid="stSidebar"] p {
             color: #0d0d0d !important;
-            font-size: 0.9rem !important;
+            font-size: 0.85rem !important;
+            margin-top: 4px !important;
+            margin-bottom: 4px !important;
         }
         [data-testid="stSidebar"] hr {
             border-color: #e5e5e5 !important;
@@ -367,11 +369,17 @@ st.markdown("""
         }
 
         /* ====== LIGNE DE CONVERSATION AVEC ICONE EPINGLE VIA COLUMNS ====== */
-        /* Cacher uniquement le conteneur stMarkdownContainer des marqueurs, sans masquer les colonnes */
-        div[data-testid="stMarkdownContainer"]:has(.conv-row-marker),
-        div[data-testid="stMarkdownContainer"]:has(.pinned-flag),
-        div[data-testid="stMarkdownContainer"]:has(.unpinned-flag) {
+        /* Cacher complètement le conteneur du marqueur */
+        div.element-container:has(.conv-row-marker) {
             display: none !important;
+            height: 0px !important;
+            margin: 0px !important;
+            padding: 0px !important;
+        }
+
+        /* Réduire la taille des éléments de la sidebar pour plus de densité */
+        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+            gap: 2px !important;
         }
 
         /* Personnalisation du block horizontal des colonnes de la conversation */
@@ -380,8 +388,8 @@ st.markdown("""
             align-items: center !important;
             border-radius: 8px !important;
             padding: 2px 4px !important;
-            margin-bottom: 2px !important;
-            margin-top: 2px !important;
+            margin-bottom: 0px !important;
+            margin-top: 0px !important;
             background-color: transparent !important;
             transition: background-color 0.15s ease !important;
         }
@@ -397,8 +405,8 @@ st.markdown("""
             border: none !important;
             box-shadow: none !important;
             margin: 0 !important;
-            height: 32px !important;
-            padding: 4px 8px !important;
+            height: 30px !important;
+            padding: 2px 6px !important;
             border-radius: 6px !important;
         }
 
@@ -409,11 +417,11 @@ st.markdown("""
             text-align: left !important;
         }
 
-        /* Bouton pin (deuxième colonne) : masqué par défaut, centré */
+        /* Bouton pin (deuxième colonne) : masqué par défaut (opacité 0), visible au survol */
         div.element-container:has(.conv-row-marker) + div.element-container div[data-testid="stHorizontalBlock"] div[data-testid="column"]:last-child button {
-            opacity: 0;
-            width: 32px !important;
-            min-width: 32px !important;
+            opacity: 0 !important;
+            width: 28px !important;
+            min-width: 28px !important;
             display: inline-flex !important;
             justify-content: center !important;
             align-items: center !important;
@@ -423,13 +431,16 @@ st.markdown("""
         /* Afficher le bouton pin au hover de la ligne */
         div.element-container:has(.conv-row-marker) + div.element-container div[data-testid="stHorizontalBlock"]:hover div[data-testid="column"]:last-child button {
             opacity: 1 !important;
-            color: #9ca3af !important;
         }
 
-        /* Si la ligne contient le flag de conversation épinglée, l'icône pin est orange et toujours visible */
-        div.element-container:has(.conv-row-marker) + div.element-container div[data-testid="stHorizontalBlock"]:has(.pinned-flag) div[data-testid="column"]:last-child button {
-            opacity: 1 !important;
-            color: #ea580c !important; /* Orange */
+        /* Si la ligne correspond à un marqueur épinglé, la couleur au survol est orange */
+        div.element-container:has(.conv-row-marker.pinned) + div.element-container div[data-testid="stHorizontalBlock"] div[data-testid="column"]:last-child button {
+            color: #ea580c !important;
+        }
+
+        /* Si la ligne correspond à un marqueur non-épinglé, la couleur au survol est gris */
+        div.element-container:has(.conv-row-marker.unpinned) + div.element-container div[data-testid="stHorizontalBlock"] div[data-testid="column"]:last-child button {
+            color: #9ca3af !important;
         }
 
         /* ====== EMPTY STATE (Nouvelle Conversation) ====== */
@@ -938,24 +949,25 @@ else:
 
             def render_conv_row(s, is_pinned_item):
                 is_active = (s["session_id"] == st.session_state.session_id)
-                lbl = ("● " if is_active else "") + s["title"]
+                # Normaliser la casse : majuscule uniquement en début de phrase
+                title_clean = s["title"].strip().capitalize() if s["title"] else "Nouvelle conversation"
+                lbl = ("● " if is_active else "") + title_clean
                 session_key = s["session_id"]
 
-                # Insérer un marqueur HTML pour cibler les colonnes avec le CSS
-                st.markdown('<div class="conv-row-marker"></div>', unsafe_allow_html=True)
+                # Insérer un marqueur HTML avec la classe de statut pour cibler avec le CSS
+                pin_class = "pinned" if is_pinned_item else "unpinned"
+                st.markdown(f'<div class="conv-row-marker {pin_class}"></div>', unsafe_allow_html=True)
                 
                 col_title, col_pin = st.columns([5.5, 1])
 
                 with col_title:
-                    nav_icon = ":material/push_pin:" if is_pinned_item else ":material/chat_bubble_outline:"
+                    # Icône unique et uniforme pour toutes les sessions
+                    nav_icon = ":material/chat_bubble_outline:"
                     if st.button(lbl, icon=nav_icon, key=f"nav_{session_key}", use_container_width=True):
                         st.session_state.session_id = session_key
                         st.rerun()
 
                 with col_pin:
-                    # Injecter le flag de statut épinglé
-                    pin_class = "pinned-flag" if is_pinned_item else "unpinned-flag"
-                    st.markdown(f'<div class="{pin_class}"></div>', unsafe_allow_html=True)
                     if st.button("", icon=":material/push_pin:", key=f"pin_{session_key}", use_container_width=True):
                         toggle_pin_session(
                             st.session_state.email,
@@ -969,7 +981,8 @@ else:
                 st.markdown("**Épinglés**")
                 for s in pinned_sessions:
                     render_conv_row(s, is_pinned_item=True)
-                st.write("")
+                # Ligne de séparation fine entre les deux sections
+                st.markdown('<hr style="margin: 8px 0; border-color: #e5e5e5 !important; opacity: 0.5;">', unsafe_allow_html=True)
 
             # 2. Section récents
             if recent_sessions:
