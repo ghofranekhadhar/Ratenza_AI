@@ -296,7 +296,7 @@ st.markdown("""
         /* On NE PAS utiliser padding-top car Streamlit peut couper le contenu paddingé via overflow:hidden. */
         /* À la place, on met min-height sur l'element-container parent du markdown de section. */
         div.element-container:has(.sidebar-section-header) {
-            min-height: 36px !important;
+            min-height: 20px !important;  /* Réduit de 36px à 20px : évite le clipping sans créer un grand vide */
             display: flex !important;
             align-items: flex-end !important;
             overflow: visible !important;
@@ -1113,7 +1113,7 @@ else:
             # 1. Section épinglés
             if pinned_sessions:
                 # Spacer + header dans un seul bloc markdown pour garantir la visibilité
-                st.markdown('<div style="height:6px;"></div><div class="sidebar-section-header">Épinglés</div>', unsafe_allow_html=True)
+                st.markdown('<div class="sidebar-section-header">Épinglés</div>', unsafe_allow_html=True)
                 for s in pinned_sessions:
                     render_conv_row(s, is_pinned_item=True)
                 # Ligne de séparation fine entre les deux sections
@@ -1121,11 +1121,11 @@ else:
 
             # 2. Section récents
             if recent_sessions:
-                st.markdown('<div style="height:6px;"></div><div class="sidebar-section-header">Récents</div>', unsafe_allow_html=True)
+                st.markdown('<div class="sidebar-section-header">Récents</div>', unsafe_allow_html=True)
                 for s in recent_sessions:
                     render_conv_row(s, is_pinned_item=False)
             else:
-                st.markdown('<div style="height:6px;"></div><div class="sidebar-section-header">Récents</div>', unsafe_allow_html=True)
+                st.markdown('<div class="sidebar-section-header">Récents</div>', unsafe_allow_html=True)
                 st.caption("Aucune conversation")
                 
 
