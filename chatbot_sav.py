@@ -108,9 +108,19 @@ st.markdown("""
         [data-testid="stSidebar"] .stButton > button:hover {
             background-color: #ececec !important;
         }
-        /* Bouton "Nouvelle conversation" specifique */
+        /* Bouton "Nouveau chat" specifique (style premium ChatGPT) */
         [data-testid="stSidebar"] .stButton:first-of-type > button {
+            background-color: #ffffff !important;
+            border: 1px solid #e5e5e5 !important;
+            border-radius: 8px !important;
+            padding: 8px 12px !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
             margin-bottom: 15px !important;
+            transition: background-color 0.15s ease, border-color 0.15s ease !important;
+        }
+        [data-testid="stSidebar"] .stButton:first-of-type > button:hover {
+            background-color: #f9f9f9 !important;
+            border-color: #cbd5e1 !important;
         }
         
         /* ====== ZONE DE CHAT (Style ChatGPT Clair) ====== */
@@ -201,8 +211,8 @@ st.markdown("""
         }
         
         [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child [data-testid="stPopover"] > button {
-            background-color: transparent !important;
-            border: none !important;
+            background-color: #ffffff !important; /* Fond blanc */
+            border: 1px solid #e5e5e5 !important; /* Bordure fine */
             color: #0d0d0d !important;
             padding: 8px 12px !important;
             border-radius: 8px !important;
@@ -211,13 +221,74 @@ st.markdown("""
             justify-content: flex-start !important;
             display: flex !important;
             align-items: center !important;
-            box-shadow: none !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important; /* Légèrement surélevé */
             gap: 12px !important;
             font-size: 0.9rem !important;
             font-weight: 600 !important;
+            transition: background-color 0.15s ease, border-color 0.15s ease !important;
         }
         [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child [data-testid="stPopover"] > button:hover {
-            background-color: #ececec !important;
+            background-color: #f9f9f9 !important;
+            border-color: #cbd5e1 !important;
+        }
+
+        /* Le conteneur du texte dans le bouton popover */
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button > div {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            justify-content: center !important;
+            line-height: 1.2 !important;
+        }
+
+        /* Modifier le texte principal du bouton */
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button p {
+            font-size: 0.85rem !important;
+            font-weight: 600 !important;
+            color: #0f172a !important;
+            margin: 0 !important;
+            text-transform: capitalize !important;
+        }
+
+        /* Ajouter le sous-titre "Client connecté" via ::after sur le conteneur du texte */
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button > div::after {
+            content: "Client connecté" !important;
+            font-size: 0.72rem !important;
+            color: #6b7280 !important;
+            font-weight: 400 !important;
+            margin-top: 1px !important;
+        }
+
+        /* Le chevron ▼ à droite du bouton popover */
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button::after {
+            content: "▼" !important;
+            font-size: 0.65rem !important;
+            color: #94a3b8 !important;
+            margin-left: auto !important;
+            transition: transform 0.2s ease !important;
+        }
+
+        /* Rotation du chevron quand ouvert */
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button[aria-expanded="true"]::after {
+            transform: rotate(180deg) !important;
+        }
+
+        /* En-têtes de section et séparateurs de la sidebar */
+        .sidebar-section-header {
+            font-size: 0.78rem !important;
+            font-weight: 600 !important;
+            color: #6b7280 !important;
+            margin-top: 12px !important;
+            margin-bottom: 4px !important;
+            padding-left: 8px !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.05em !important;
+        }
+        .sidebar-divider {
+            margin: 10px 0 4px 0 !important;
+            border: none !important;
+            border-top: 1px solid #e5e5e5 !important;
+            opacity: 0.6 !important;
         }
         
         /* Contenu du popover */
@@ -978,19 +1049,19 @@ else:
 
             # 1. Section épinglés
             if pinned_sessions:
-                st.markdown("**Épinglés**")
+                st.markdown('<div class="sidebar-section-header">Épinglés</div>', unsafe_allow_html=True)
                 for s in pinned_sessions:
                     render_conv_row(s, is_pinned_item=True)
                 # Ligne de séparation fine entre les deux sections
-                st.markdown('<hr style="margin: 8px 0; border-color: #e5e5e5 !important; opacity: 0.5;">', unsafe_allow_html=True)
+                st.markdown('<hr class="sidebar-divider">', unsafe_allow_html=True)
 
             # 2. Section récents
             if recent_sessions:
-                st.markdown("**Récents**")
+                st.markdown('<div class="sidebar-section-header">Récents</div>', unsafe_allow_html=True)
                 for s in recent_sessions:
                     render_conv_row(s, is_pinned_item=False)
             else:
-                st.markdown("**Récents**")
+                st.markdown('<div class="sidebar-section-header">Récents</div>', unsafe_allow_html=True)
                 st.caption("Aucune conversation")
                 
 
@@ -1006,10 +1077,10 @@ else:
             <style>
                 /* Cible uniquement le dernier popover de la sidebar principale (profil), pas les colonnes */
                 [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button::before {{
-                    content: "{initials}";
+                    content: "{initials[0]}";
                     width: 32px;
                     height: 32px;
-                    background-color: #ea580c !important;
+                    background-color: #2563eb !important; /* Bleu royal */
                     color: #ffffff !important;
                     font-weight: 600;
                     display: flex;
@@ -1021,11 +1092,11 @@ else:
                 }}
             </style>
         """, unsafe_allow_html=True)
-        
+
         # Popover qui s'affiche sous forme de bouton profil
         warnings_count = status.get("warnings", 0)
         max_w = config.MAX_WARNINGS
-        with st.popover(f"{client_short} ", use_container_width=True):
+        with st.popover(f"{client_name.split()[0].lower()} ", use_container_width=True):
             # Définir couleur et badge selon avertissements
             if warnings_count == 0:
                 warn_color = "#16a34a"
