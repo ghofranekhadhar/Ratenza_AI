@@ -1,3 +1,4 @@
+import sys
 import streamlit as st
 from pymongo import MongoClient
 from datetime import datetime
@@ -6,6 +7,13 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import chatbot_config as config
 import chatbot_classifier as classifier
+
+# Force l'encodage UTF-8 pour stdout/stderr (emojis dans les logs console Windows)
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+except AttributeError:
+    pass  # Python < 3.7 ou environnement sans reconfigure
 
 # Configuration de la page Streamlit
 st.set_page_config(
@@ -1039,9 +1047,13 @@ else:
         
         # Log temporaire diagnostique
         print(f"[DIAGNOSTIC] Utilisateur : {st.session_state.email}, Boutique : {st.session_state.commerce_id}")
-        print(f"[DIAGNOSTIC] Nombre de sessions récupérées en base : {len(all_sessions)}")
+        print(f"[DIAGNOSTIC] Nombre de sessions recuperees en base : {len(all_sessions)}")
         for idx, s in enumerate(all_sessions):
-            print(f"  - Session {idx}: id={s['session_id']}, title={s['title']}, is_pinned={s.get('is_pinned', False)}")
+            try:
+                print(f"  - Session {idx}: id={s['session_id']}, title={s['title']}, is_pinned={s.get('is_pinned', False)}")
+            except UnicodeEncodeError:
+                safe_title = s['title'].encode('ascii', errors='replace').decode('ascii')
+                print(f"  - Session {idx}: id={s['session_id']}, title={safe_title}, is_pinned={s.get('is_pinned', False)}")
         
         # Option d'épinglage supprimée d'ici car intégrée dans le menu des 3 points (comme ChatGPT)
             
@@ -1314,12 +1326,11 @@ else:
                 user_input
             )
             
-            # 2. Classifier le message avec Gemini (détection de ton et gravité)
+            # 2. Classifier le message avec Groq/Gemini (détection de ton et gravité)
             classification = classifier.classify_message(user_input)
-            if classification.get("is_fallback", False):
-                st.session_state.api_fallback_active = True
-            else:
-                st.session_state.api_fallback_active = False
+            # Note : si la classification tombe en mode local (is_fallback=True), ce n'est pas
+            # critique — la reponse finale sera quand meme generee par le LLM.
+            # Le banner "Mode de secours" est reserve a l'echec de generate_chatbot_response.
             
             is_inappropriate = classification.get("is_inappropriate", False)
             category = classification.get("category", "NORMAL")
@@ -1416,7 +1427,9 @@ else:
                     )
                     if is_fallback:
                         st.session_state.api_fallback_active = True
-                    
+                    else:
+                        st.session_state.api_fallback_active = False
+
                 # Enregistrer la réponse de l'assistant en DB
                 save_message_to_conversation(
                     st.session_state.email,

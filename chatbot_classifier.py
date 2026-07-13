@@ -1,3 +1,4 @@
+import sys
 import json
 import re
 import random
@@ -6,21 +7,167 @@ from datetime import datetime
 from pymongo import MongoClient
 import chatbot_config as config
 
+# Force l'encodage UTF-8 pour stdout/stderr (evite UnicodeEncodeError sur Windows cp1252)
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+except AttributeError:
+    pass
+
+# ===========================================================
+# GroqKeyManager — rotation automatique sur erreur 429
+# ===========================================================
+class GroqKeyManager:
+    """
+    Gere un pool de cles API Groq.
+    Sur erreur 429 / quota epuise, bascule automatiquement sur la cle suivante.
+    Quand toutes les cles sont epuisees, leve une exception RateLimitExhausted
+    pour declencher le basculement vers Gemini ou le mode OFFLINE.
+    """
+
+    class RateLimitExhausted(Exception):
+        """Levee quand TOUTES les cles Groq du pool ont atteint leur limite simultanement."""
+        pass
+
+    # Duree pendant laquelle une cle 429 est mise en attente avant d'etre re-essayee
+    # Groq remet le quota TPM a zero toutes les 60s → on attend 65s par securite
+    _RATE_LIMIT_COOLDOWN_SECONDS = 65
+
+    def __init__(self, api_keys: list, model: str):
+        if not api_keys:
+            raise ValueError("[GroqKeyManager] Aucune cle Groq disponible dans le pool.")
+        from groq import Groq
+        import time
+        self._Groq = Groq
+        self._time = time
+        self._keys = api_keys
+        self._model = model
+        self._current_index = 0
+        # Cles definitivement invalides (erreur 401) — jamais retentees
+        self._permanently_dead: set = set()
+        # Cles en cooldown 429 : {index: timestamp_epuisement}
+        self._cooldown_until: dict = {}
+        self._client = self._Groq(api_key=self._keys[0])
+        print(f"[GroqKeyManager] Pool initialise : {len(self._keys)} cle(s). Cle active : #1.")
+
+    @property
+    def model(self):
+        return self._model
+
+    def _is_available(self, idx: int) -> bool:
+        """Retourne True si la cle idx est utilisable (pas morte, pas en cooldown actif)."""
+        if idx in self._permanently_dead:
+            return False
+        cooldown_end = self._cooldown_until.get(idx)
+        if cooldown_end is not None and self._time.time() < cooldown_end:
+            remaining = int(cooldown_end - self._time.time())
+            return False  # encore en cooldown
+        # Cooldown expire : on retire l'entree pour la rendre disponible
+        if idx in self._cooldown_until:
+            del self._cooldown_until[idx]
+            print(f"[GroqKeyManager] Cle #{idx + 1} : cooldown expire, disponible a nouveau.")
+        return True
+
+    def _rotate(self, permanent: bool = False):
+        """Marque la cle courante comme epuisee et passe a la suivante disponible."""
+        try:
+            if permanent:
+                self._permanently_dead.add(self._current_index)
+                print(f"[GroqKeyManager] Cle #{self._current_index + 1} marquee invalide (401) - blacklist definitive.")
+            else:
+                cooldown_end = self._time.time() + self._RATE_LIMIT_COOLDOWN_SECONDS
+                self._cooldown_until[self._current_index] = cooldown_end
+                print(f"[GroqKeyManager] Cle #{self._current_index + 1} : quota 429, cooldown {self._RATE_LIMIT_COOLDOWN_SECONDS}s.")
+        except Exception:
+            pass
+
+        # Chercher la prochaine cle disponible
+        for offset in range(1, len(self._keys)):
+            next_idx = (self._current_index + offset) % len(self._keys)
+            if self._is_available(next_idx):
+                self._current_index = next_idx
+                self._client = self._Groq(api_key=self._keys[next_idx])
+                try:
+                    print(f"[GroqKeyManager] Rotation reussie -> Cle #{next_idx + 1} maintenant active.")
+                except Exception:
+                    pass
+                return
+
+        # Aucune cle immediatement disponible
+        # Verifier si une cle en cooldown va bientot se liberer
+        soonest = None
+        for idx in self._cooldown_until:
+            t = self._cooldown_until[idx]
+            if soonest is None or t < soonest:
+                soonest = t
+
+        if soonest is not None:
+            wait = max(0, soonest - self._time.time())
+            try:
+                print(f"[GroqKeyManager] Toutes les cles en cooldown. Attente de {wait:.0f}s avant la prochaine disponible...")
+            except Exception:
+                pass
+            self._time.sleep(wait + 1)
+            # Re-essayer apres le sleep
+            for offset in range(len(self._keys)):
+                next_idx = (self._current_index + offset) % len(self._keys)
+                if self._is_available(next_idx):
+                    self._current_index = next_idx
+                    self._client = self._Groq(api_key=self._keys[next_idx])
+                    try:
+                        print(f"[GroqKeyManager] Apres cooldown -> Cle #{next_idx + 1} active.")
+                    except Exception:
+                        pass
+                    return
+
+        try:
+            print(f"[GroqKeyManager] TOUTES les cles Groq ({len(self._keys)}) sont epuisees sans recuperation possible. Basculement OFFLINE.")
+        except Exception:
+            pass
+        raise GroqKeyManager.RateLimitExhausted("Toutes les cles Groq du pool sont definitivement epuisees.")
+
+    def chat_completions_create(self, messages: list, temperature: float = 0.8, max_tokens: int = 1024) -> str:
+        """
+        Appelle chat.completions.create avec rotation automatique sur 429 (cooldown TTL) et 401 (blacklist definitive).
+        Retourne le contenu texte de la reponse.
+        """
+        while True:
+            try:
+                response = self._client.chat.completions.create(
+                    model=self._model,
+                    messages=messages,
+                    temperature=temperature,
+                    max_tokens=max_tokens
+                )
+                return response.choices[0].message.content.strip()
+            except Exception as e:
+                err = str(e)
+                is_rate_limit = "429" in err or "rate_limit" in err.lower() or "quota" in err.lower()
+                is_invalid_key = "401" in err or "invalid_api_key" in err.lower() or "invalid api key" in err.lower()
+                if is_rate_limit:
+                    self._rotate(permanent=False)  # cooldown 65s, peut lever RateLimitExhausted
+                elif is_invalid_key:
+                    self._rotate(permanent=True)   # blacklist definitive, peut lever RateLimitExhausted
+                else:
+                    raise  # erreur reseau ou autre : on la propage directement
+
+
 # ===========================================================
 # Initialiser le client LLM (Groq en priorite, Gemini en fallback)
 # ===========================================================
+groq_manager: "GroqKeyManager | None" = None
 llm_client = None
 llm_provider = None  # "groq" ou "gemini"
 llm_ready = False
 
-# --- Tentative 1 : Groq (prioritaire) ---
-if config.GROQ_API_KEY:
+# --- Tentative 1 : Groq avec pool de cles (prioritaire) ---
+if config.GROQ_API_KEYS:
     try:
-        from groq import Groq
-        llm_client = Groq(api_key=config.GROQ_API_KEY)
+        from groq import Groq  # noqa: F401 — verifie que la lib est installee
+        groq_manager = GroqKeyManager(config.GROQ_API_KEYS, config.GROQ_MODEL)
         llm_provider = "groq"
         llm_ready = True
-        print(f"[INFO] Groq API connectee avec succes (modele: {config.GROQ_MODEL}).")
+        print(f"[INFO] Groq API connectee avec succes (modele: {config.GROQ_MODEL}, {len(config.GROQ_API_KEYS)} cle(s) dans le pool).")
     except Exception as e:
         print(f"[WARNING] Erreur de configuration Groq: {e}")
 
@@ -37,7 +184,7 @@ if not llm_ready and config.GEMINI_API_KEY:
         print(f"[WARNING] Erreur de configuration Gemini: {e}")
 
 if not llm_ready:
-    print("[WARNING] Aucune API LLM configuree (GROQ_API_KEY ou GEMINI_API_KEY absente). Chatbot en mode OFFLINE/FAQ.")
+    print("[WARNING] Aucune API LLM configuree (GROQ_API_KEYS ou GEMINI_API_KEY absente). Chatbot en mode OFFLINE/FAQ.")
 
 
 # ===========================================================
@@ -46,16 +193,14 @@ if not llm_ready:
 def _llm_generate_text(prompt, temperature=0.1):
     """
     Envoie un prompt simple au LLM et retourne la reponse texte brute.
-    Fonctionne avec Groq (chat.completions) ou Gemini (generate_content).
+    Fonctionne avec Groq (rotation automatique de cles) ou Gemini.
     """
-    if llm_provider == "groq":
-        response = llm_client.chat.completions.create(
-            model=config.GROQ_MODEL,
+    if llm_provider == "groq" and groq_manager:
+        return groq_manager.chat_completions_create(
             messages=[{"role": "user", "content": prompt}],
             temperature=temperature,
             max_tokens=512
         )
-        return response.choices[0].message.content.strip()
     elif llm_provider == "gemini":
         from google.genai import types
         response = llm_client.models.generate_content(
@@ -72,19 +217,18 @@ def _llm_chat(system_instruction, messages, temperature=0.8):
     """
     Envoie une conversation multi-tour au LLM et retourne la reponse texte.
     messages = liste de dicts {"role": "user"|"assistant", "text": "..."}
+    Groq : rotation automatique de cles sur erreur 429.
     """
-    if llm_provider == "groq":
+    if llm_provider == "groq" and groq_manager:
         groq_messages = [{"role": "system", "content": system_instruction}]
         for m in messages:
             role = m["role"] if m["role"] in ["user", "assistant"] else "assistant"
             groq_messages.append({"role": role, "content": m["text"]})
-        response = llm_client.chat.completions.create(
-            model=config.GROQ_MODEL,
+        return groq_manager.chat_completions_create(
             messages=groq_messages,
             temperature=temperature,
             max_tokens=1024
         )
-        return response.choices[0].message.content.strip()
     elif llm_provider == "gemini":
         from google.genai import types
         contents = [
@@ -387,7 +531,7 @@ def _llm_route_message_type(raw_message):
     Routage semantique avant toute donnee MongoDB.
     En cas d'incertitude, on privilegie GENERAL pour eviter la pollution metier.
     """
-    if not llm_ready or not llm_client:
+    if not llm_ready:
         return None
 
     safe_message = raw_message.replace('"', '\\"')
@@ -592,7 +736,7 @@ def classify_message(message):
     if not message.strip():
         return {"category": "NORMAL", "severity": "LOW", "is_inappropriate": False, "reason": "Message vide", "is_fallback": False}
 
-    if not llm_ready or not llm_client:
+    if not llm_ready:
         return _offline_fallback_classify(message)
 
     try:
@@ -723,6 +867,12 @@ def get_client_context_info(email, commerce_id=None):
                 else:
                     dt_str = "Inconnue"
                 context += f"  * Date: {dt_str}, Montant: {tx.get('montant')} DT, Type: {tx.get('type_achat', 'Achat')}\n"
+
+        # Injecter dynamiquement les paliers de recompense configures
+        if hasattr(config, "REFERRAL_TIERS"):
+            context += "\n### CONFIGURATION DES RECOMPENSES DE PARRAINAGE RETENZA (SYSTEME) :\n"
+            for tier in config.REFERRAL_TIERS:
+                context += f"- {tier['required']} parrainage(s) complété(s) -> {tier['reward']} (Code promo : {tier['code']})\n"
 
         context += "--------------------------------------------------\n"
         return context
@@ -956,7 +1106,7 @@ def _get_intent_response(intent, client_name, client_email, commerce_name, mode=
         },
         "parrainage": {
             "direct": f"Le programme de parrainage Retenza vous permet d'inviter vos amis en partageant votre code personnel (le votre est **REF-GHOFRANE-DARR**). A chaque fois qu'un proche effectue son premier achat avec votre code, le parrainage est valide. Des 5 parrainages reussis, vous obtenez une reduction de -20% sur la boutique.",
-            "example": f"Voici un exemple de message d'invitation : 'Salut ! Je te recommande Boutique Tunis. En utilisant mon code de parrainage **REF-GHOFRANE-DARR** pour ta premiere commande, tu auras des remises exclusives et ca m'aidera a debloquer mes avantages !'"
+            "example": f"Voici un exemple de message d'invitation : 'Salut ! Je te recommande {commerce_name}. En utilisant mon code de parrainage **REF-GHOFRANE-DARR** pour ta premiere commande, tu auras des remises exclusives et ca m'aidera a debloquer mes avantages !'"
         },
         "retenza": {
             "direct": f"Retenza est une plateforme intelligente de fidelisation client utilisee par {commerce_name}. Grâce a des analyses d'IA (segmentation GMM et scoring de fidelite), elle recompense nos clients les plus fideles en leur attribuant le statut d'Ambassadeur. Ce statut ouvre l'acces a un systeme de parrainage menant a une remise de -20% apres 5 parrainages.",
@@ -1008,7 +1158,7 @@ def _get_intent_response(intent, client_name, client_email, commerce_name, mode=
             "example": "Par exemple, lors de nos soldes de saison, vous beneficiez de reductions immediates allant jusqu'a -50% sur une selection d'articles."
         },
         "salutation": {
-            "direct": f"Bonjour {client_name} ! Je suis votre assistant virtuel pour Boutique Tunis. Comment puis-je vous accompagner aujourd'hui ?",
+            "direct": f"Bonjour {client_name} ! Je suis votre assistant virtuel pour {commerce_name}. Comment puis-je vous accompagner aujourd'hui ?",
             "example": "Je suis a votre disposition pour vous orienter sur nos produits, suivre vos colis, ou vous expliquer le programme de fidelite Retenza."
         },
         "remerciement": {
@@ -1618,7 +1768,7 @@ def detect_primary_intent(message, conversation_history):
     return detect_all_intents(message, conversation_history)[0]
 
 
-def get_aggregated_context(intents, full_context):
+def get_aggregated_context(intents, full_context, commerce_name="la boutique"):
     """
     Construit un contexte MongoDB structure et cible pour toutes les intentions.
     Evite de polluer Gemini avec des donnees hors-sujet.
@@ -1637,13 +1787,13 @@ def get_aggregated_context(intents, full_context):
         if intent == "Assistance":
             block = "[Services de l'Assistant]\n"
             block += (
-                "Tu es l'assistant de Boutique Tunis. Tu peux :\n"
+                f"Tu es l'assistant de {commerce_name}. Tu peux :\n"
                 "- Conseiller sur les produits de soin en fonction des types de peaux.\n"
                 "- Informer sur les statuts de livraison et la politique de retour/remboursement.\n"
                 "- Expliquer le programme de fidelisation intelligent Retenza.\n"
                 "- Presenter les avantages du statut Ambassadeur et le programme de parrainage.\n"
                 "CONSIGNE : Presente tes services de facon accueillante, chaleureuse et concise.\n"
-            )
+                )
             sections.append(block)
 
         elif intent == "Ambassadeur":
@@ -1667,8 +1817,9 @@ def get_aggregated_context(intents, full_context):
             else:
                 block += "Aucun parrainage actif trouve.\n"
             block += (
-                "CONSIGNE : Explique le fonctionnement du parrainage (partager son code personnel pour parrainer 5 proches afin de gagner -20%). "
-                "Fournis le code de parrainage du client s'il est present dans les donnees. S'il n'a pas de parrainages completes, indique-le.\n"
+                "CONSIGNE : Explique le fonctionnement du parrainage en te basant uniquement sur la CONFIGURATION DES RECOMPENSES DE PARRAINAGE RETENZA (SYSTEME). "
+                "Liste obligatoirement les 3 paliers complets (1, 3 et 5 parrainages) avec leurs codes promo respectifs (PARRAIN10, PARRAIN20, VIPAMBASSADEUR) pour donner une vision d'ensemble. "
+                "Fournis le code de parrainage du client s'il est present dans les donnees, indique clairement son nombre actuel de parrainages completes, et precise ce qu'il a deja debloque ou doit faire pour le palier suivant.\n"
             )
             sections.append(block)
 
@@ -1678,8 +1829,8 @@ def get_aggregated_context(intents, full_context):
             if relevant:
                 block += "\n".join(relevant) + "\n"
             block += (
-                "CONSIGNE : Explique comment gagner la reduction de -20% (programme Retenza / parrainage). "
-                "Parle de la technologie (analyses d'IA, score de fidelite global, segmentation, XGBoost pour churn) de facon simple et rassurante.\n"
+                "CONSIGNE : Explique le fonctionnement global de Retenza et ses 3 paliers de recompenses de parrainage en te basant sur la CONFIGURATION DES RECOMPENSES DE PARRAINAGE RETENZA (SYSTEME). "
+                "Parle de la technologie (analyses d'IA, score de fidelite global, GMM pour la segmentation, XGBoost pour churn) de facon simple et rassurante.\n"
             )
             sections.append(block)
 
@@ -1713,9 +1864,9 @@ def get_aggregated_context(intents, full_context):
     return "\n".join(sections)
 
 
-def get_intent_focused_data(intention, full_context):
+def get_intent_focused_data(intention, full_context, commerce_name="la boutique"):
     """Alias pour compatibilite ascendante."""
-    return get_aggregated_context([intention], full_context)
+    return get_aggregated_context([intention], full_context, commerce_name=commerce_name)
 
 
 def _get_general_conversation_response(client_name, commerce_name, intent, user_message):
@@ -1810,10 +1961,87 @@ def validate_and_sanitize_response(response_text, intents, is_followup=False):
     return response_text
 
 
+def _detect_forced_language_change(text):
+    """
+    Détecte si l'utilisateur demande explicitement à ce que le chatbot réponde 
+    dans une langue spécifique (mode de langue croisée persistant).
+    """
+    if not text:
+        return None
+    text_lower = text.lower()
+    normalized = normalize_text(text_lower)
+    
+    # Détecteurs de réinitialisation/retour au mode par défaut
+    reset_triggers = [
+        "mode normal", "normalement", "par defaut", "langue par defaut", 
+        "reset", "reviens au francais", "reviens au mode normal",
+        "parle normalement", "repond normalement"
+    ]
+    if any(trigger in normalized for trigger in reset_triggers):
+        return "RESET"
+        
+    languages_map = {
+        "coreen": "coréen", "korean": "coréen", "한국어": "coréen",
+        "francais": "français", "french": "français",
+        "anglais": "anglais", "english": "anglais",
+        "arabe": "arabe", "arabic": "arabe",
+        "tunisien": "tunisien", "darija": "tunisien", "tounsi": "tunisien", "derja": "tunisien", "tounsia": "tunisien",
+        "suedois": "suédois", "swedish": "suédois", "svenska": "suédois",
+        "neerlandais": "néerlandais", "dutch": "néerlandais", "nederlands": "néerlandais",
+        "italien": "italien", "italian": "italien", "italiano": "italien",
+        "portugais": "portugais", "portuguese": "portugais", "portugues": "portugais",
+        "espagnol": "espagnol", "spanish": "espagnol", "espanol": "espagnol",
+        "allemand": "allemand", "german": "allemand", "deutsch": "allemand"
+    }
+
+    # 1. Recherche des déclencheurs forts de changement de langue
+    strong_triggers = [
+        "parle", "parles", "reponds", "repond", "ecris", "ecrit", "discute", 
+        "dialogue", "speak", "write", "reply", "bascule", "basculer", "passe", "passer",
+        "ahki", "tahki", "tkalem", "tkallem"
+    ]
+    
+    for trigger in strong_triggers:
+        for lang_key, lang_val in languages_map.items():
+            pattern = rf"\b{trigger}\b.*?\b{lang_key}\b"
+            if re.search(pattern, normalized):
+                return lang_val
+
+    # 2. Recherche des déclencheurs faibles (ex: "en coréen", "b derja")
+    weak_triggers = ["en", "in", "b", "bel", "bil"]
+    for trigger in weak_triggers:
+        for lang_key, lang_val in languages_map.items():
+            pattern = rf"\b{trigger}\s+{lang_key}\b"
+            if re.search(pattern, normalized):
+                return lang_val
+                
+    return None
+
+
 def generate_chatbot_response(client_name, client_email, commerce_name, conversation_history, user_message, commerce_id=None):
     """
     Orchestre la reponse du chatbot en combinant detection locale, LLM, et mode fallback (offline).
     """
+    # Détection et persistance en mémoire du mode de langue forcé pour cette session
+    active_forced_lang = None
+    if conversation_history:
+        for msg in conversation_history:
+            if msg.get("role") == "user":
+                detected_lang = _detect_forced_language_change(msg.get("text", ""))
+                if detected_lang == "RESET":
+                    active_forced_lang = None
+                elif detected_lang:
+                    active_forced_lang = detected_lang
+                    
+    current_detected_lang = _detect_forced_language_change(user_message)
+    if current_detected_lang == "RESET":
+        active_forced_lang = None
+    elif current_detected_lang:
+        active_forced_lang = current_detected_lang
+
+    if active_forced_lang:
+        print(f"[LANG_MEM] Mode de langue active forcee detecte : {active_forced_lang}")
+
     initial_contextual_intents = _get_contextual_followup_intents(conversation_history, user_message)
     # BUG D6 FIX : On passait [conversation_history] par defaut ou implicite
     is_followup = _is_contextual_followup(user_message, []) or bool(initial_contextual_intents)
@@ -1828,7 +2056,7 @@ def generate_chatbot_response(client_name, client_email, commerce_name, conversa
     )
 
     # Mode OFFLINE : reponses locales uniquement
-    if not llm_ready or not llm_client:
+    if not llm_ready:
         if is_pure_social:
             general_intent = _infer_general_intent(user_message)
             return _get_general_conversation_response(
@@ -1875,7 +2103,7 @@ def generate_chatbot_response(client_name, client_email, commerce_name, conversa
             full_context = get_client_context_info(client_email, commerce_id)
             if not full_context or not full_context.strip():
                 full_context = "Aucune donnee enregistree pour ce client."
-            client_context = get_aggregated_context(intents, full_context)
+            client_context = get_aggregated_context(intents, full_context, commerce_name=commerce_name)
 
         # 5. Construire le prompt systeme
         sav_instruction = config._SAV_INSTRUCTION if "Plainte SAV" in intents else ""
@@ -1897,6 +2125,15 @@ def generate_chatbot_response(client_name, client_email, commerce_name, conversa
             format_instruction=format_instruction or "(Aucune contrainte de format particuliere.)",
             client_context=client_context
         )
+
+        if active_forced_lang:
+            override_msg = (
+                f"\n\n=== RÈGLE DE TRADUCTION FORCEE (SÉCURITÉ DE SESSION) ===\n"
+                f"L'utilisateur a configuré la langue de la conversation : vous DEVEZ répondre exclusivement en **{active_forced_lang}**.\n"
+                f"Ignorez la règle de détection automatique de la langue. Répondez UNIQUEMENT en **{active_forced_lang}**, même si l'utilisateur vous écrit dans une autre langue (par exemple en français).\n"
+                f"Ne commentez pas ce choix de langue. Faites la traduction de manière naturelle, directe et fluide."
+            )
+            system_instruction += override_msg
 
         # 6. Historique conversationnel (toujours les 8 derniers messages pour le contexte)
         cleaned_contents = []
@@ -1949,13 +2186,19 @@ def generate_chatbot_response(client_name, client_email, commerce_name, conversa
 
         return validated_reply, False
 
+    except GroqKeyManager.RateLimitExhausted:
+        # Toutes les cles Groq du pool sont epuisees → basculement OFFLINE/FAQ
+        print(f"[API_ERROR] Toutes les cles Groq du pool sont epuisees. Bascule vers la FAQ locale de secours.")
+        return _get_offline_response(client_name, client_email, commerce_name, conversation_history, user_message), True
+
     except Exception as e:
         error_str = str(e)
         if "429" in error_str or "quota" in error_str.lower() or "rate_limit" in error_str.lower():
-            print(f"[API_ERROR] Quota LLM ({llm_provider}) dépassé. Bascule automatique sur la FAQ locale de secours.")
+            # 429 residuel (ex: Gemini ou erreur non interceptee par le manager)
+            print(f"[API_ERROR] Quota LLM ({llm_provider}) depasse. Bascule automatique sur la FAQ locale de secours.")
         elif "timeout" in error_str.lower() or "deadline" in error_str.lower():
             print(f"[API_ERROR] Timeout de connexion au LLM ({llm_provider}). Bascule automatique sur la FAQ locale de secours.")
         else:
             print(f"[API_ERROR] Erreur inattendue du LLM ({llm_provider}) : {e}. Bascule automatique sur la FAQ locale de secours.")
-            
+
         return _get_offline_response(client_name, client_email, commerce_name, conversation_history, user_message), True
