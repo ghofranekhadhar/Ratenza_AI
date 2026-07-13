@@ -206,24 +206,16 @@ st.markdown("""
 
         /* ====== ZONE DE CONTENU SCROLLABLE ====== */
 
-        /* Conteneur principal de la sidebar - clip tout ce qui dépasse */
-        [data-testid="stSidebarContent"] {
+        /* stSidebarUserContent = le vrai conteneur scrollable utilisateur dans Streamlit 1.58 */
+        [data-testid="stSidebarUserContent"] {
             position: relative !important;
-            height: 100vh !important;
-            overflow: hidden !important;
-        }
-
-        /* Zone scrollable : couvre le cas direct ET le cas avec div intermédiaire */
-        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"],
-        [data-testid="stSidebarContent"] > div > [data-testid="stVerticalBlock"] {
-            height: calc(100vh - 80px) !important;
+            height: calc(100vh - 5px) !important;
             overflow-y: auto !important;
             overflow-x: hidden !important;
-            padding-bottom: 70px !important;
+            padding-bottom: 75px !important;
             scrollbar-width: none !important;
         }
-        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"]::-webkit-scrollbar,
-        [data-testid="stSidebarContent"] > div > [data-testid="stVerticalBlock"]::-webkit-scrollbar {
+        [data-testid="stSidebarUserContent"]::-webkit-scrollbar {
             display: none !important;
         }
 
@@ -464,7 +456,7 @@ st.markdown("""
         }
 
         /* Compacité verticale globale de la sidebar */
-        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] {
+        [data-testid="stSidebarUserContent"] [data-testid="stVerticalBlock"] {
             gap: 2px !important;
         }
 
@@ -486,23 +478,21 @@ st.markdown("""
         }
 
         /* Hover sur toute la ligne OU ligne active */
-        [data-testid="stSidebar"] div:has(> div[data-testid="column"]):hover,
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:hover,
         [data-testid="stSidebar"] .stHorizontalBlock:hover,
-        [data-testid="stSidebar"] div:has(> div[data-testid="column"]):has(.active-session),
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(.active-session),
         [data-testid="stSidebar"] .stHorizontalBlock:has(.active-session) {
             background-color: #ececec !important;
         }
 
-        /* Forcer absolument toutes les colonnes et leurs sous-éléments de la sidebar en transparent */
-        [data-testid="stSidebar"] [data-testid="column"],
-        [data-testid="stSidebar"] [data-testid="column"] *,
-        [data-testid="stSidebar"] [data-testid="column"] > div,
-        [data-testid="stSidebar"] [data-testid="column"] .element-container,
-        [data-testid="stSidebar"] [data-testid="column"] .stButton,
-        [data-testid="stSidebar"] [data-testid="column"] .stButton > button,
-        [data-testid="stSidebar"] [data-testid="column"] div[data-testid="stPopover"] > button {
+        /* Forcer absolument toutes les colonnes (stColumn) et leurs sous-éléments en transparent */
+        [data-testid="stSidebar"] [data-testid="stColumn"],
+        [data-testid="stSidebar"] [data-testid="stColumn"] *,
+        [data-testid="stSidebar"] [data-testid="stColumn"] > div,
+        [data-testid="stSidebar"] [data-testid="stColumn"] .element-container,
+        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton,
+        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton > button,
+        [data-testid="stSidebar"] [data-testid="stColumn"] [data-testid="stPopoverButton"] {
             background: transparent !important;
             background-color: transparent !important;
             border: none !important;
@@ -510,7 +500,7 @@ st.markdown("""
         }
 
         /* ── Bouton Titre de Discussion ── */
-        [data-testid="stSidebar"] [data-testid="column"] .stButton > button {
+        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton > button {
             background: transparent !important;
             background-color: transparent !important;
             border: none !important;
@@ -528,9 +518,9 @@ st.markdown("""
             justify-content: flex-start !important;
             text-align: left !important;
         }
-        [data-testid="stSidebar"] [data-testid="column"] .stButton > button:hover,
-        [data-testid="stSidebar"] [data-testid="column"] .stButton > button:focus,
-        [data-testid="stSidebar"] [data-testid="column"] .stButton > button:active {
+        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton > button:hover,
+        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton > button:focus,
+        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton > button:active {
             background: transparent !important;
             background-color: transparent !important;
             border: none !important;
@@ -538,8 +528,8 @@ st.markdown("""
         }
 
         /* Override des conteneurs internes du bouton Streamlit */
-        [data-testid="stSidebar"] [data-testid="column"] .stButton > button > div,
-        [data-testid="stSidebar"] [data-testid="column"] .stButton > button > div > div {
+        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton > button > div,
+        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton > button > div > div {
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
@@ -548,8 +538,8 @@ st.markdown("""
         }
 
         /* Ellipsis sur le texte du titre */
-        [data-testid="stSidebar"] [data-testid="column"] .stButton > button p,
-        [data-testid="stSidebar"] [data-testid="column"] .stButton > button span {
+        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton > button p,
+        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton > button span {
             white-space: nowrap !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
@@ -558,12 +548,11 @@ st.markdown("""
         }
 
 
-        /* ====== BOUTON MENU ⋮ ====== */
+        /* ====== BOUTON MENU ⋮ (stPopoverButton dans Streamlit 1.58) ====== */
 
-        /* Masqué par défaut (opacité 0), sans bordure, visible au survol */
-        [data-testid="stSidebar"] [data-testid="column"] div[data-testid="stPopover"] > button,
-        [data-testid="stSidebar"] [data-testid="column"]:nth-of-type(2) button,
-        [data-testid="stSidebar"] [data-testid="column"]:last-child button {
+        /* Masqué par défaut, transparent, sans bordure */
+        [data-testid="stSidebar"] [data-testid="stColumn"] [data-testid="stPopoverButton"],
+        [data-testid="stSidebar"] [data-testid="stColumn"]:last-child [data-testid="stPopoverButton"] {
             opacity: 0 !important;
             width: 28px !important;
             min-width: 28px !important;
@@ -582,19 +571,15 @@ st.markdown("""
             transition: opacity 0.15s ease, color 0.15s ease !important;
         }
 
-        /* Afficher au hover de la ligne (stHorizontalBlock) OU quand le menu est ouvert */
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:hover [data-testid="column"]:nth-of-type(2) button,
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:hover [data-testid="column"]:last-child button,
-        [data-testid="stSidebar"] .stHorizontalBlock:hover [data-testid="column"]:nth-of-type(2) button,
-        [data-testid="stSidebar"] .stHorizontalBlock:hover [data-testid="column"]:last-child button,
-        [data-testid="stSidebar"] [data-testid="column"] button[aria-expanded="true"] {
+        /* Afficher au hover de la ligne (stHorizontalBlock) OU quand ouvert */
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:hover [data-testid="stColumn"]:last-child [data-testid="stPopoverButton"],
+        [data-testid="stSidebar"] .stHorizontalBlock:hover [data-testid="stColumn"]:last-child [data-testid="stPopoverButton"],
+        [data-testid="stSidebar"] [data-testid="stColumn"] [data-testid="stPopoverButton"][aria-expanded="true"] {
             opacity: 1 !important;
         }
 
         /* Survol direct de l'icône ⋮ */
-        [data-testid="stSidebar"] [data-testid="column"] div[data-testid="stPopover"] > button:hover,
-        [data-testid="stSidebar"] [data-testid="column"]:nth-of-type(2) button:hover,
-        [data-testid="stSidebar"] [data-testid="column"]:last-child button:hover {
+        [data-testid="stSidebar"] [data-testid="stColumn"] [data-testid="stPopoverButton"]:hover {
             color: #171717 !important;
             background: rgba(0, 0, 0, 0.08) !important;
             border-radius: 4px !important;
@@ -602,10 +587,8 @@ st.markdown("""
             box-shadow: none !important;
         }
 
-        /* Cacher la flèche de chevron vers le bas par défaut de st.popover dans la sidebar */
-        [data-testid="stSidebar"] [data-testid="column"] div[data-testid="stPopover"] > button svg:nth-of-type(2),
-        [data-testid="stSidebar"] [data-testid="column"]:nth-of-type(2) button svg:nth-of-type(2),
-        [data-testid="stSidebar"] [data-testid="column"]:last-child button svg:nth-of-type(2) {
+        /* Cacher la flèche chevron native de st.popover */
+        [data-testid="stSidebar"] [data-testid="stColumn"] [data-testid="stPopoverButton"] svg:last-of-type {
             display: none !important;
         }
 
