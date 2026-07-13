@@ -116,8 +116,8 @@ st.markdown("""
         [data-testid="stSidebar"] .stButton > button:hover {
             background-color: #ececec !important;
         }
-        /* Bouton "Nouveau chat" specifique (style premium ChatGPT) */
-        [data-testid="stSidebar"] .stButton:first-of-type > button {
+        /* Bouton "Nouveau chat" specifique (style premium ChatGPT) - cible specifiquement le premier element de la sidebar */
+        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div:nth-child(2) .stButton > button {
             background-color: #ffffff !important;
             border: 1px solid #e5e5e5 !important;
             border-radius: 8px !important;
@@ -126,11 +126,12 @@ st.markdown("""
             margin-bottom: 15px !important;
             transition: background-color 0.15s ease, border-color 0.15s ease !important;
         }
-        [data-testid="stSidebar"] .stButton:first-of-type > button:hover {
+        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div:nth-child(2) .stButton > button:hover {
             background-color: #f9f9f9 !important;
             border-color: #cbd5e1 !important;
         }
-        
+
+
         /* ====== ZONE DE CHAT (Style ChatGPT Clair) ====== */
         .stChatMessage {
             padding: 1rem 0;
@@ -475,73 +476,102 @@ st.markdown("""
             border-radius: 2px !important;
         }
 
-        /* ====== LIGNE DE CONVERSATION AVEC ICONE EPINGLE VIA COLUMNS ====== */
-        /* Cacher complètement le conteneur du marqueur */
-        div.element-container:has(.conv-row-marker) {
+
+        /* ====== LIGNE DE CONVERSATION : style Claude (plat, sans carte, compact) ====== */
+
+        /* Cacher les marqueurs de statut restants */
+        .conv-row-marker, .rename-mode-marker {
             display: none !important;
-            height: 0px !important;
-            margin: 0px !important;
-            padding: 0px !important;
+            height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
         }
 
-        /* Réduire la taille des éléments de la sidebar pour plus de densité */
-        /* IMPORTANT: utiliser > pour ne cibler QUE le premier niveau, pas les stVerticalBlock dans les colonnes */
+        /* Compacité verticale globale de la sidebar */
         [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] {
             gap: 2px !important;
         }
 
-        /* Personnalisation du block horizontal des colonnes de la conversation */
-        div.element-container:has(.conv-row-marker) + div.element-container div[data-testid="stHorizontalBlock"] {
-            gap: 0px !important;
+        /* ── Ligne complète (le stHorizontalBlock) ── */
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) {
+            gap: 0 !important;
             align-items: center !important;
-            border-radius: 8px !important;
-            padding: 2px 4px !important;
-            margin-bottom: 0px !important;
-            margin-top: 0px !important;
-            background-color: transparent !important;
-            transition: background-color 0.15s ease !important;
-            border: none !important;
-            box-shadow: none !important;
-        }
-
-        /* Enlever tout fond/bordure/ombre des colonnes de conversation */
-        [data-testid="stSidebar"] div.element-container:has(.conv-row-marker) + div.element-container [data-testid="stHorizontalBlock"],
-        [data-testid="stSidebar"] div.element-container:has(.conv-row-marker) + div.element-container [data-testid="column"] {
-            background-color: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-        }
-
-        /* Hover de la ligne entière */
-        div.element-container:has(.conv-row-marker) + div.element-container div[data-testid="stHorizontalBlock"]:hover {
-            background-color: #ececec !important;
-        }
-
-        /* Supprimer les styles par défaut des boutons de la ligne */
-        div.element-container:has(.conv-row-marker) + div.element-container div[data-testid="stHorizontalBlock"] button {
+            padding: 0px 6px !important;
+            margin: 0 !important;
+            border-radius: 6px !important;
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
-            margin: 0 !important;
-            height: 30px !important;
-            padding: 2px 6px !important;
-            border-radius: 6px !important;
-            outline: none !important;
+            transition: background-color 0.15s ease !important;
+            height: 34px !important;
         }
 
-        /* Bouton nav principal : alignement gauche et largeur 100% */
-        div.element-container:has(.conv-row-marker) + div.element-container div[data-testid="stHorizontalBlock"] div[data-testid="column"]:first-child button {
+        /* Hover sur toute la ligne */
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker):hover {
+            background-color: rgba(0, 0, 0, 0.05) !important;
+        }
+
+        /* Enlever fond/bordures des colonnes de la ligne */
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) [data-testid="column"] {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        /* ── Bouton Titre de Discussion ── */
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) button[key^="nav_"] {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            outline: none !important;
+            height: 30px !important;
+            min-height: 30px !important;
+            padding: 0 4px !important;
+            margin: 0 !important;
+            border-radius: 4px !important;
+            color: #0d0d0d !important;
+            font-size: 0.85rem !important;
+            font-weight: 400 !important;
             width: 100% !important;
             justify-content: flex-start !important;
             text-align: left !important;
         }
 
-        /* Bouton pin (deuxième colonne) : masqué par défaut (opacité 0), sans bordure, visible au survol */
-        div.element-container:has(.conv-row-marker) + div.element-container div[data-testid="stHorizontalBlock"] div[data-testid="column"]:last-child button {
+        /* Override stérile des conteneurs internes du bouton Streamlit */
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) button[key^="nav_"] > div,
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) button[key^="nav_"] > div > div {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            width: 100% !important;
+            overflow: hidden !important;
+        }
+
+        /* Ellipsis sur le texte du titre */
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) button[key^="nav_"] p,
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) button[key^="nav_"] span {
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            max-width: 100% !important;
+            display: block !important;
+        }
+
+        /* Indiquer l'état actif (discussion courante) */
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker.pinned) button[key^="nav_"] {
+            font-weight: 500 !important;
+        }
+
+        /* ====== BOUTON MENU ⋮ ====== */
+
+        /* Masqué par défaut (opacité 0), sans bordure, visible au survol */
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) div[data-testid="stPopover"] > button {
             opacity: 0 !important;
             width: 28px !important;
             min-width: 28px !important;
-            height: 30px !important;
+            height: 28px !important;
             display: inline-flex !important;
             justify-content: center !important;
             align-items: center !important;
@@ -551,23 +581,144 @@ st.markdown("""
             padding: 0 !important;
             margin: 0 !important;
             outline: none !important;
+            color: #737373 !important;
             transition: opacity 0.15s ease, color 0.15s ease !important;
         }
 
-        /* Afficher le bouton pin au hover de la ligne */
-        div.element-container:has(.conv-row-marker) + div.element-container div[data-testid="stHorizontalBlock"]:hover div[data-testid="column"]:last-child button {
+        /* Afficher au hover de la ligne OU quand le menu est ouvert */
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker):hover div[data-testid="stPopover"] > button,
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) div[data-testid="stPopover"] > button[aria-expanded="true"] {
             opacity: 1 !important;
         }
 
-        /* Si la ligne correspond à un marqueur épinglé, la couleur au survol est orange */
-        div.element-container:has(.conv-row-marker.pinned) + div.element-container div[data-testid="stHorizontalBlock"] div[data-testid="column"]:last-child button {
-            color: #ea580c !important;
+        /* Survol direct de l'icône ⋮ */
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) div[data-testid="stPopover"] > button:hover {
+            color: #171717 !important;
+            background: rgba(0, 0, 0, 0.08) !important;
+            border-radius: 4px !important;
         }
 
-        /* Si la ligne correspond à un marqueur non-épinglé, la couleur au survol est gris */
-        div.element-container:has(.conv-row-marker.unpinned) + div.element-container div[data-testid="stHorizontalBlock"] div[data-testid="column"]:last-child button {
-            color: #9ca3af !important;
+        /* Cacher la flèche de chevron vers le bas par défaut de st.popover */
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) div[data-testid="stPopover"] > button svg {
+            display: none !important;
         }
+
+
+        /* ====== MODE RENOMMAGE : champ texte + ✓ + ✕ ====== */
+
+        /* Ligne de renommage complète */
+        div[data-testid="stHorizontalBlock"]:has(.rename-mode-marker) {
+            gap: 4px !important;
+            align-items: center !important;
+            padding: 0 4px !important;
+            margin: 0 !important;
+            height: 34px !important;
+        }
+
+        /* Input d'édition */
+        div[data-testid="stHorizontalBlock"]:has(.rename-mode-marker) [data-baseweb="input"] {
+            border-color: #2563eb !important;
+            border-radius: 4px !important;
+            height: 28px !important;
+            background: #ffffff !important;
+        }
+        div[data-testid="stHorizontalBlock"]:has(.rename-mode-marker) svg {
+            display: none !important;
+        }
+
+        /* Bouton ✓ vert discret */
+        div[data-testid="stHorizontalBlock"]:has(.rename-mode-marker) button[key^="rename_ok_"] {
+            color: #16a34a !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            font-weight: bold !important;
+            font-size: 1rem !important;
+            padding: 0 !important;
+            height: 28px !important;
+        }
+        div[data-testid="stHorizontalBlock"]:has(.rename-mode-marker) button[key^="rename_ok_"]:hover {
+            background: rgba(22, 163, 74, 0.1) !important;
+            border-radius: 4px !important;
+        }
+
+        /* Bouton ✕ gris discret */
+        div[data-testid="stHorizontalBlock"]:has(.rename-mode-marker) button[key^="rename_cancel_"] {
+            color: #9ca3af !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            font-weight: bold !important;
+            font-size: 0.9rem !important;
+            padding: 0 !important;
+            height: 28px !important;
+        }
+        div[data-testid="stHorizontalBlock"]:has(.rename-mode-marker) button[key^="rename_cancel_"]:hover {
+            background: rgba(156, 163, 175, 0.1) !important;
+            border-radius: 4px !important;
+        }
+
+        /* ====== POPOVER : menu contextuel fluide (style ChatGPT / Claude) ====== */
+
+        /* Corps du popover : padding vertical seulement, coins arrondis */
+        div[data-testid="stPopoverBody"] {
+            padding: 4px 0 !important;
+            border-radius: 8px !important;
+            min-width: 155px !important;
+            max-width: 200px !important;
+            overflow: hidden !important;
+            border: 1px solid #e5e5e5 !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+            background-color: #ffffff !important;
+        }
+
+        /* Supprimer tous les espacements entre les element-containers du popover */
+        div[data-testid="stPopoverBody"] .element-container,
+        div[data-testid="stPopoverBody"] .stButton,
+        div[data-testid="stPopoverBody"] .stMarkdown {
+            margin: 0 !important;
+            padding: 0 !important;
+            min-height: 0 !important;
+        }
+
+        /* Style uniforme des boutons : texte simple, transparent, sans bordure */
+        div[data-testid="stPopoverBody"] button {
+            display: block !important;
+            width: 100% !important;
+            height: 30px !important;
+            padding: 0 12px !important;
+            margin: 0 !important;
+            font-size: 0.84rem !important;
+            font-weight: 400 !important;
+            text-align: left !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 5px !important;
+            color: #111827 !important;
+            line-height: 1 !important;
+            cursor: pointer !important;
+        }
+        div[data-testid="stPopoverBody"] button:hover {
+            background: #f3f4f6 !important;
+            border: none !important;
+            box-shadow: none !important;
+            color: #000 !important;
+        }
+
+        /* Séparateur fin et "Supprimer" en rouge discret */
+        div[data-testid="stPopoverBody"] button[key^="menu_del_"] {
+            border-top: 1px solid #e5e7eb !important;
+            margin-top: 4px !important;
+            padding-top: 4px !important;
+            border-radius: 0 !important;
+            color: #dc2626 !important;
+        }
+        div[data-testid="stPopoverBody"] button[key^="menu_del_"]:hover {
+            background: #fef2f2 !important;
+            color: #b91c1c !important;
+        }
+
 
         /* ====== EMPTY STATE (Nouvelle Conversation) ====== */
         .empty-state-container {
@@ -833,7 +984,7 @@ def update_session_title(email, commerce_id, session_id, new_title):
     db = db_client[config.DB_NAME]
     db.chatbot_conversations.update_one(
         {"email": email.lower(), "commerce_id": commerce_id, "session_id": session_id},
-        {"$set": {"title": new_title}}
+        {"$set": {"title": new_title, "title_edited_manually": True}}
     )
 
 def delete_session(email, commerce_id, session_id):
@@ -846,6 +997,39 @@ def delete_session(email, commerce_id, session_id):
         "commerce_id": commerce_id,
         "session_id": session_id
     })
+
+def start_rename_mode(session_key):
+    """Active le mode renommage pour une session (utilisé comme on_click de st.button)."""
+    st.session_state.rename_session_id = session_key
+
+def save_rename(session_key, email, commerce_id):
+    """Sauvegarde le nouveau titre et quitte le mode renommage."""
+    input_key = f"rename_input_{session_key}"
+    val = st.session_state.get(input_key, "").strip()
+    if val:
+        update_session_title(email, commerce_id, session_key, val[:50])
+    # Si vide, on garde l'ancien titre (rien à mettre à jour)
+    st.session_state.rename_session_id = None
+
+def cancel_rename():
+    """Annule le mode renommage sans sauvegarder."""
+    st.session_state.rename_session_id = None
+
+@st.dialog("Supprimer la conversation")
+def confirm_delete_dialog(session_key, title_clean, email, commerce_id, is_active_session):
+    """Boîte de dialogue modale de confirmation de suppression de session."""
+    st.write(f"Êtes-vous sûr de vouloir supprimer définitivement la conversation **{title_clean}** ? Tout l'historique sera perdu.")
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("Annuler", use_container_width=True):
+            st.rerun()
+    with c2:
+        if st.button("Supprimer", type="primary", use_container_width=True):
+            delete_session(email, commerce_id, session_key)
+            if is_active_session:
+                st.session_state.session_id = None
+            st.toast("Conversation supprimée")
+            st.rerun()
 
 def get_conversation(email, commerce_id, session_id):
     """Récupère l'historique de conversation d'une session spécifique."""
@@ -876,12 +1060,13 @@ def save_message_to_conversation(email, commerce_id, session_id, role, text, cat
     if severity:
         message_doc["severity"] = severity
         
-    # Mettre à jour le titre si c'est le premier message de l'utilisateur
+    # Mettre à jour le titre si c'est le premier message de l'utilisateur et qu'il n'a pas été édité manuellement
     update_data = {"$push": {"messages": message_doc}, "$set": {"updated_at": timestamp}}
     
     if role == "user":
         conv = db.chatbot_conversations.find_one({"email": email.lower(), "commerce_id": commerce_id, "session_id": session_id})
-        if not conv or not conv.get("messages"):
+        has_manual_title = conv.get("title_edited_manually", False) if conv else False
+        if not has_manual_title and (not conv or not conv.get("messages")):
             # Premier message -> générer le titre
             words = text.split()
             if len(words) > 5:
@@ -1012,9 +1197,9 @@ else:
 
     import uuid
     
-    # Initialiser session_id
-    if "session_id" not in st.session_state:
-        st.session_state.session_id = "default"
+    # Initialiser session_id (ou le régénérer si la session active vient d'être supprimée)
+    if "session_id" not in st.session_state or st.session_state.session_id is None:
+        st.session_state.session_id = str(uuid.uuid4())
 
     # ==========================
     # BARRE LATÉRALE (SIDEBAR)
@@ -1095,32 +1280,80 @@ else:
 
             def render_conv_row(s, is_pinned_item):
                 is_active = (s["session_id"] == st.session_state.session_id)
-                # Nettoyer et normaliser le titre (retirer emojis, puces, majuscule début)
                 title_clean = clean_title(s["title"])
-                lbl = ("● " if is_active else "") + title_clean
                 session_key = s["session_id"]
 
-                # Insérer un marqueur HTML avec la classe de statut pour cibler avec le CSS
-                pin_class = "pinned" if is_pinned_item else "unpinned"
-                st.markdown(f'<div class="conv-row-marker {pin_class}"></div>', unsafe_allow_html=True)
-                
-                col_title, col_pin = st.columns([5.5, 1])
-
-                with col_title:
-                    # Icône unique et uniforme pour toutes les sessions
-                    nav_icon = ":material/chat_bubble_outline:"
-                    if st.button(lbl, icon=nav_icon, key=f"nav_{session_key}", use_container_width=True):
-                        st.session_state.session_id = session_key
-                        st.rerun()
-
-                with col_pin:
-                    if st.button("", icon=":material/push_pin:", key=f"pin_{session_key}", use_container_width=True):
-                        toggle_pin_session(
-                            st.session_state.email,
-                            st.session_state.commerce_id,
-                            session_key
+                if st.session_state.get("rename_session_id") == session_key:
+                    # ── MODE RENOMMAGE : pas de conv-row-marker pour ne pas activer le CSS de hover ──
+                    _email = st.session_state.email
+                    _cid   = st.session_state.commerce_id
+                    inp_col, ok_col, cancel_col = st.columns([4.2, 0.7, 0.7])
+                    with inp_col:
+                        # Marqueur placé INSIDE la colonne pour que le parent stHorizontalBlock contienne la classe
+                        st.markdown('<div class="rename-mode-marker"></div>', unsafe_allow_html=True)
+                        st.text_input(
+                            "",
+                            value=title_clean,
+                            max_chars=50,
+                            key=f"rename_input_{session_key}",
+                            label_visibility="collapsed"
                         )
-                        st.rerun()
+                    with ok_col:
+                        st.button("✓", key=f"rename_ok_{session_key}",
+                                  on_click=save_rename,
+                                  args=(session_key, _email, _cid),
+                                  use_container_width=True)
+                    with cancel_col:
+                        st.button("✕", key=f"rename_cancel_{session_key}",
+                                  on_click=cancel_rename,
+                                  use_container_width=True)
+
+                else:
+                    # ── MODE NORMAL : titre + menu ⋮ (2 colonnes) ──
+                    pin_class = "pinned" if is_pinned_item else "unpinned"
+                    col_title, col_menu = st.columns([5.5, 0.9])
+
+                    with col_title:
+                        # Marqueur placé INSIDE la colonne pour que le parent stHorizontalBlock contienne la classe
+                        st.markdown(f'<div class="conv-row-marker {pin_class}"></div>', unsafe_allow_html=True)
+                        lbl = ("● " if is_active else "") + title_clean
+                        if st.button(lbl, key=f"nav_{session_key}", use_container_width=True):
+                            st.session_state.session_id = session_key
+                            st.rerun()
+
+                    with col_menu:
+                        pin_label  = "Désépingler" if is_pinned_item else "Épingler"
+                        with st.popover("", icon=":material/more_vert:",
+                                        key=f"menu_pop_{session_key}",
+                                        use_container_width=True):
+                            # Épingler / Désépingler
+                            st.button(
+                                pin_label,
+                                key=f"menu_pin_{session_key}",
+                                on_click=toggle_pin_session,
+                                args=(st.session_state.email,
+                                      st.session_state.commerce_id,
+                                      session_key),
+                                use_container_width=True
+                            )
+                            # Renommer
+                            st.button(
+                                "Renommer",
+                                key=f"menu_rename_{session_key}",
+                                on_click=start_rename_mode,
+                                args=(session_key,),
+                                use_container_width=True
+                            )
+                            # Supprimer
+                            if st.button("Supprimer", key=f"menu_del_{session_key}",
+                                         use_container_width=True):
+                                confirm_delete_dialog(
+                                    session_key, title_clean,
+                                    st.session_state.email,
+                                    st.session_state.commerce_id,
+                                    is_active
+                                )
+
 
             # 1. Section épinglés
             if pinned_sessions:
