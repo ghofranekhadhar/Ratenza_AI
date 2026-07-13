@@ -78,7 +78,7 @@ st.markdown("""
             border: 1px solid #fca5a5;
         }        /* ====== SIDEBAR (Style Claude) ====== */
         [data-testid="stSidebar"] {
-            background-color: #f5f0ec !important;
+            background-color: #f9f9f9 !important;
         }
         [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3, [data-testid="stSidebar"] p {
             color: #0d0d0d !important;
@@ -114,7 +114,7 @@ st.markdown("""
             display: inline-flex !important;
         }
         [data-testid="stSidebar"] .stButton > button:hover {
-            background-color: #ebe5e0 !important;
+            background-color: #ececec !important;
         }
         /* Bouton "Nouveau chat" specifique (style premium ChatGPT) - cible specifiquement le premier element de la sidebar */
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div:nth-child(2) .stButton > button {
@@ -127,8 +127,8 @@ st.markdown("""
             transition: background-color 0.15s ease, border-color 0.15s ease !important;
         }
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div:nth-child(2) .stButton > button:hover {
-            background-color: #ebe5e0 !important;
-            border-color: #d5cfc9 !important;
+            background-color: #f9f9f9 !important;
+            border-color: #cbd5e1 !important;
         }
 
 
@@ -204,40 +204,21 @@ st.markdown("""
             padding-bottom: 2rem !important;
         }
 
-        /* ====== SIDEBAR PROFILE POPOVER (Style ChatGPT) ====== */
-        /* Conteneur principal : position relative pour que le last-child absolute soit bien ancré */
-        [data-testid="stSidebarContent"] {
-            position: relative !important;
-            height: 100vh !important;
-            overflow: hidden !important;
-        }
-
-        /* La zone de contenu scrollable de la sidebar (tout sauf le bouton profil) */
-        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] {
-            height: calc(100vh - 90px) !important;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
-            padding-bottom: 40px !important; /* Ajout d'un padding pour ne pas être caché par le bouton profil */
-            /* Masquer la scrollbar visuellement (gardee fonctionnelle) */
-            scrollbar-width: none !important;
-        }
-        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"]::-webkit-scrollbar {
-            display: none !important;
-        }
+        /* ====== SIDEBAR PROFILE POPOVER ====== */
         
         /* Bouton profil toujours ancré en bas de la sidebar */
-        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] > div:last-child {
+        div:has(> .profile-marker) + div {
             position: fixed !important;
             bottom: 12px !important;
             left: 0px !important;
-            width: var(--sidebar-width, 242px) !important;
+            width: var(--sidebar-width, 244px) !important;
             padding: 0 12px !important;
             z-index: 1000 !important;
-            background-color: #f5f0ec !important;
+            background-color: #f9f9f9 !important; /* Même gris que la sidebar */
             box-sizing: border-box !important;
         }
         
-        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] > div:last-child [data-testid="stPopover"] > button {
+        div:has(> .profile-marker) + div [data-testid="stPopover"] > button {
             background-color: #ffffff !important; /* Fond blanc */
             border: 1px solid #e5e5e5 !important; /* Bordure fine */
             color: #0d0d0d !important;
@@ -254,13 +235,13 @@ st.markdown("""
             font-weight: 600 !important;
             transition: background-color 0.15s ease, border-color 0.15s ease !important;
         }
-        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] > div:last-child [data-testid="stPopover"] > button:hover {
+        div:has(> .profile-marker) + div [data-testid="stPopover"] > button:hover {
             background-color: #f9f9f9 !important;
             border-color: #cbd5e1 !important;
         }
 
         /* Le conteneur du texte dans le bouton popover */
-        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button > div {
+        div:has(> .profile-marker) + div div[data-testid="stPopover"] > button > div {
             display: flex !important;
             flex-direction: column !important;
             align-items: flex-start !important;
@@ -269,7 +250,7 @@ st.markdown("""
         }
 
         /* Modifier le texte principal du bouton */
-        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button p {
+        div:has(> .profile-marker) + div div[data-testid="stPopover"] > button p {
             font-size: 0.85rem !important;
             font-weight: 600 !important;
             color: #0f172a !important;
@@ -278,7 +259,7 @@ st.markdown("""
         }
 
         /* Ajouter le sous-titre "Client connecté" via ::after sur le conteneur du texte */
-        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button > div::after {
+        div:has(> .profile-marker) + div div[data-testid="stPopover"] > button > div::after {
             content: "Client connecté" !important;
             font-size: 0.72rem !important;
             color: #6b7280 !important;
@@ -287,7 +268,7 @@ st.markdown("""
         }
 
         /* Le chevron ▼ à droite du bouton popover */
-        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button::after {
+        div:has(> .profile-marker) + div div[data-testid="stPopover"] > button::after {
             content: "▼" !important;
             font-size: 0.65rem !important;
             color: #94a3b8 !important;
@@ -296,7 +277,7 @@ st.markdown("""
         }
 
         /* Rotation du chevron quand ouvert */
-        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button[aria-expanded="true"]::after {
+        div:has(> .profile-marker) + div div[data-testid="stPopover"] > button[aria-expanded="true"]::after {
             transform: rotate(180deg) !important;
         }
 
@@ -488,7 +469,7 @@ st.markdown("""
         [data-testid="stSidebar"] div:has(> div[data-testid="column"]):has(.active-session),
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(.active-session),
         [data-testid="stSidebar"] .stHorizontalBlock:has(.active-session) {
-            background-color: #ebe5e0 !important;
+            background-color: #ececec !important;
         }
 
         /* Forcer absolument toutes les colonnes et leurs sous-éléments de la sidebar en transparent */
@@ -1375,11 +1356,16 @@ else:
         client_short = client_name.split()[0].lower() if client_name else "gho"
         client_email = st.session_state.get("email", "")
         
+        # Spacer pour faire défiler le contenu au-dessus du bouton fixé au bas de la sidebar
+        st.markdown('<div style="height: 60px;"></div>', unsafe_allow_html=True)
+        # Marqueur pour positionner le bouton profil de manière fixe en CSS
+        st.markdown('<div class="profile-marker"></div>', unsafe_allow_html=True)
+        
         # Injecter dynamiquement l'avatar initiales en CSS pour le bouton popover profil UNIQUEMENT
         st.markdown(f"""
             <style>
-                /* Cible uniquement le dernier popover de la sidebar principale (profil), pas les colonnes */
-                [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button::before {{
+                /* Cible uniquement le popover profil via le marqueur de classe */
+                div:has(> .profile-marker) + div div[data-testid="stPopover"] > button::before {{
                     content: "{initials[0]}";
                     width: 32px;
                     height: 32px;
