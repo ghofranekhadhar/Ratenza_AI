@@ -456,8 +456,15 @@ st.markdown("""
         }
 
         /* Compacité verticale globale de la sidebar */
+        /* Espacement uniforme : 0 gap, toutes les element-containers en margin 0 */
         [data-testid="stSidebarUserContent"] [data-testid="stVerticalBlock"] {
-            gap: 2px !important;
+            gap: 0px !important;
+        }
+        [data-testid="stSidebarUserContent"] .element-container {
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
         }
 
         /* ── Ligne complète (le stHorizontalBlock ou div parent de colonne) dans la sidebar ── */
@@ -486,17 +493,23 @@ st.markdown("""
         }
 
         /* Forcer absolument toutes les colonnes (stColumn) et leurs sous-éléments en transparent */
+        /* IMPORTANT: pointer-events:auto sur les boutons pour garantir la cliquabilité */
         [data-testid="stSidebar"] [data-testid="stColumn"],
-        [data-testid="stSidebar"] [data-testid="stColumn"] *,
         [data-testid="stSidebar"] [data-testid="stColumn"] > div,
         [data-testid="stSidebar"] [data-testid="stColumn"] .element-container,
-        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton,
+        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton {
+            background: transparent !important;
+            background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
         [data-testid="stSidebar"] [data-testid="stColumn"] .stButton > button,
         [data-testid="stSidebar"] [data-testid="stColumn"] [data-testid="stPopoverButton"] {
             background: transparent !important;
             background-color: transparent !important;
             border: none !important;
             box-shadow: none !important;
+            pointer-events: auto !important;
         }
 
         /* ── Bouton Titre de Discussion ── */
@@ -548,11 +561,11 @@ st.markdown("""
         }
 
 
-        /* ====== BOUTON MENU ⋮ (stPopoverButton dans Streamlit 1.58) ====== */
+        /* ====== BOUTON MENU ⋮ ====== */
+        /* Scope UNIQUEMENT aux lignes de conversation (stHorizontalBlock) pour ne pas affecter le profil */
 
-        /* Masqué par défaut, transparent, sans bordure */
-        [data-testid="stSidebar"] [data-testid="stColumn"] [data-testid="stPopoverButton"],
-        [data-testid="stSidebar"] [data-testid="stColumn"]:last-child [data-testid="stPopoverButton"] {
+        /* Masqué par défaut */
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"] [data-testid="stPopoverButton"] {
             opacity: 0 !important;
             width: 28px !important;
             min-width: 28px !important;
@@ -568,27 +581,27 @@ st.markdown("""
             margin: 0 !important;
             outline: none !important;
             color: #737373 !important;
+            cursor: pointer !important;
+            pointer-events: auto !important;
             transition: opacity 0.15s ease, color 0.15s ease !important;
         }
 
-        /* Afficher au hover de la ligne (stHorizontalBlock) OU quand ouvert */
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:hover [data-testid="stColumn"]:last-child [data-testid="stPopoverButton"],
-        [data-testid="stSidebar"] .stHorizontalBlock:hover [data-testid="stColumn"]:last-child [data-testid="stPopoverButton"],
-        [data-testid="stSidebar"] [data-testid="stColumn"] [data-testid="stPopoverButton"][aria-expanded="true"] {
+        /* Afficher au hover de la ligne OU quand le menu est ouvert */
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:hover [data-testid="stColumn"] [data-testid="stPopoverButton"],
+        [data-testid="stSidebar"] .stHorizontalBlock:hover [data-testid="stColumn"] [data-testid="stPopoverButton"],
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"] [data-testid="stPopoverButton"][aria-expanded="true"] {
             opacity: 1 !important;
         }
 
         /* Survol direct de l'icône ⋮ */
-        [data-testid="stSidebar"] [data-testid="stColumn"] [data-testid="stPopoverButton"]:hover {
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"] [data-testid="stPopoverButton"]:hover {
             color: #171717 !important;
             background: rgba(0, 0, 0, 0.08) !important;
             border-radius: 4px !important;
-            border: none !important;
-            box-shadow: none !important;
         }
 
-        /* Cacher la flèche chevron native de st.popover */
-        [data-testid="stSidebar"] [data-testid="stColumn"] [data-testid="stPopoverButton"] svg:last-of-type {
+        /* Cacher la flèche chevron native de st.popover dans les lignes de conv */
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"] [data-testid="stPopoverButton"] svg:last-of-type {
             display: none !important;
         }
 
