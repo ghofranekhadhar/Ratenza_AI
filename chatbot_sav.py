@@ -521,7 +521,7 @@ st.markdown("""
         }
 
         /* ── Bouton Titre de Discussion ── */
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) button[key^="nav_"] {
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .stButton > button {
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
@@ -540,8 +540,8 @@ st.markdown("""
         }
 
         /* Override stérile des conteneurs internes du bouton Streamlit */
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) button[key^="nav_"] > div,
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) button[key^="nav_"] > div > div {
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .stButton > button > div,
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .stButton > button > div > div {
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
@@ -550,8 +550,8 @@ st.markdown("""
         }
 
         /* Ellipsis sur le texte du titre */
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) button[key^="nav_"] p,
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) button[key^="nav_"] span {
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .stButton > button p,
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .stButton > button span {
             white-space: nowrap !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
@@ -560,7 +560,7 @@ st.markdown("""
         }
 
         /* Indiquer l'état actif (discussion courante) */
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker.pinned) button[key^="nav_"] {
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker.pinned) .stButton > button {
             font-weight: 500 !important;
         }
 
@@ -626,8 +626,8 @@ st.markdown("""
             display: none !important;
         }
 
-        /* Bouton ✓ vert discret */
-        div[data-testid="stHorizontalBlock"]:has(.rename-mode-marker) button[key^="rename_ok_"] {
+        /* Bouton ✓ vert discret (dans la 2ème colonne, qui est le 3ème enfant en comptant le spacer) */
+        div[data-testid="stHorizontalBlock"]:has(.rename-mode-marker) > div:nth-child(3) button {
             color: #16a34a !important;
             background: transparent !important;
             border: none !important;
@@ -637,13 +637,13 @@ st.markdown("""
             padding: 0 !important;
             height: 28px !important;
         }
-        div[data-testid="stHorizontalBlock"]:has(.rename-mode-marker) button[key^="rename_ok_"]:hover {
+        div[data-testid="stHorizontalBlock"]:has(.rename-mode-marker) > div:nth-child(3) button:hover {
             background: rgba(22, 163, 74, 0.1) !important;
             border-radius: 4px !important;
         }
 
-        /* Bouton ✕ gris discret */
-        div[data-testid="stHorizontalBlock"]:has(.rename-mode-marker) button[key^="rename_cancel_"] {
+        /* Bouton ✕ gris discret (dans la 3ème colonne, qui est le 5ème enfant en comptant le spacer) */
+        div[data-testid="stHorizontalBlock"]:has(.rename-mode-marker) > div:nth-child(5) button {
             color: #9ca3af !important;
             background: transparent !important;
             border: none !important;
