@@ -1278,7 +1278,9 @@ else:
                             value=title_clean,
                             max_chars=50,
                             key=f"rename_input_{session_key}",
-                            label_visibility="collapsed"
+                            label_visibility="collapsed",
+                            on_change=save_rename,
+                            args=(session_key, _email, _cid)
                         )
                     with ok_col:
                         st.button("✓", key=f"rename_ok_{session_key}",
