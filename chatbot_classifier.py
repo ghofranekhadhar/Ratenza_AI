@@ -6,6 +6,7 @@ from difflib import SequenceMatcher
 from datetime import datetime
 from pymongo import MongoClient
 import chatbot_config as config
+import chatbot_orders
 
 # Force l'encodage UTF-8 pour stdout/stderr (evite UnicodeEncodeError sur Windows cp1252)
 try:
@@ -873,6 +874,17 @@ def get_client_context_info(email, commerce_id=None):
             context += "\n### CONFIGURATION DES RECOMPENSES DE PARRAINAGE RETENZA (SYSTEME) :\n"
             for tier in config.REFERRAL_TIERS:
                 context += f"- {tier['required']} parrainage(s) complété(s) -> {tier['reward']} (Code promo : {tier['code']})\n"
+
+        # ── DONNÉES COMMANDES EN TEMPS RÉEL ──
+        try:
+            if commerce_id:
+                orders = chatbot_orders.get_orders_by_email(email, commerce_id)
+                context += chatbot_orders.format_order_context(orders)
+            else:
+                context += "\n### COMMANDES : commerce_id non fourni — requête ignorée.\n"
+        except Exception as order_err:
+            print(f"[WARNING] chatbot_orders failed: {order_err}")
+            context += "\n### COMMANDES : erreur de récupération.\n"
 
         context += "--------------------------------------------------\n"
         return context
@@ -1937,7 +1949,9 @@ def validate_and_sanitize_response(response_text, intents, is_followup=False):
 
     # Relance ou intention metier : ne jamais ecraser la reponse par une salutation generique
     if is_followup or business_intents:
-        if "Plainte SAV" in intents or "Commande" in intents or "Livraison" in intents:
+        # Empathie obligatoire UNIQUEMENT pour les plaintes SAV réelles
+        # — PAS pour un simple suivi de commande (Commande/Livraison sans Plainte SAV)
+        if "Plainte SAV" in intents:
             empathie_keywords = ["desole", "excuse", "navre", "pardon", "regrette", "incident", "embete", "comprends", "inquiet"]
             if not any(w in text_lower for w in empathie_keywords):
                 return "Je comprends votre inquietude et je suis desole(e) pour ce desagrement. " + response_text
@@ -2125,6 +2139,23 @@ def generate_chatbot_response(client_name, client_email, commerce_name, conversa
             format_instruction=format_instruction or "(Aucune contrainte de format particuliere.)",
             client_context=client_context
         )
+
+        # 5b. Injection prioritaire des commandes pour les intents commande/livraison
+        ORDER_INTENTS = {"commande", "livraison", "Commande", "Livraison"}
+        if any(i in ORDER_INTENTS for i in intents) and commerce_id:
+            try:
+                orders = chatbot_orders.get_orders_by_email(client_email, commerce_id)
+                order_block = chatbot_orders.format_order_context(orders)
+                system_instruction += (
+                    "\n\n=== DONNÉES COMMANDES EN TEMPS RÉEL (PRIORITÉ ABSOLUE) ===\n"
+                    + order_block +
+                    "Tu DOIS utiliser ces données réelles pour répondre. "
+                    "N'invente rien. Ne dis JAMAIS 'je n'ai pas accès à la base de données'. "
+                    "Ne donne JAMAIS un délai générique de 3-5 jours.\n"
+                )
+                print(f"[ORDER_INJECT] {len(orders)} commande(s) injectée(s) dans le prompt pour intent: {intents}")
+            except Exception as oe:
+                print(f"[ORDER_INJECT] Erreur injection commandes: {oe}")
 
         if active_forced_lang:
             override_msg = (
