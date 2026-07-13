@@ -1222,140 +1222,139 @@ else:
                 safe_title = s['title'].encode('ascii', errors='replace').decode('ascii')
                 print(f"  - Session {idx}: id={s['session_id']}, title={safe_title}, is_pinned={s.get('is_pinned', False)}")
         
-        # Option d'épinglage supprimée d'ici car intégrée dans le menu des 3 points (comme ChatGPT)
-            
-        # Si recherche active, on affiche les résultats formatés avec extraits de texte
-        if search_query:
-            if all_sessions:
-                for s in all_sessions:
-                    # Récupération et formatage de l'extrait
-                    snippet = s.get("snippet", "")
-                    if not snippet:
-                        snippet = "Correspondance trouvée dans le titre de la discussion"
+        # ── DÉFINITION DE LA FONCTION DE RENDU DES LIGNES ──
+        def render_conv_row(s, is_pinned_item):
+            is_active = (s["session_id"] == st.session_state.session_id)
+            title_clean = clean_title(s["title"])
+            session_key = s["session_id"]
+
+            if st.session_state.get("rename_session_id") == session_key:
+                # ── MODE RENOMMAGE : pas de conv-row-marker pour ne pas activer le CSS de hover ──
+                _email = st.session_state.email
+                _cid   = st.session_state.commerce_id
+                inp_col, ok_col, cancel_col = st.columns([4.2, 0.7, 0.7])
+                with inp_col:
+                    # Marqueur placé INSIDE la colonne pour que le parent stHorizontalBlock contienne la classe
+                    st.markdown('<div class="rename-mode-marker"></div>', unsafe_allow_html=True)
+                    st.text_input(
+                        "",
+                        value=title_clean,
+                        max_chars=50,
+                        key=f"rename_input_{session_key}",
+                        label_visibility="collapsed",
+                        on_change=save_rename,
+                        args=(session_key, _email, _cid)
+                    )
+                with ok_col:
+                    st.button("✓", key=f"rename_ok_{session_key}",
+                              on_click=save_rename,
+                              args=(session_key, _email, _cid),
+                              use_container_width=True)
+                with cancel_col:
+                    st.button("✕", key=f"rename_cancel_{session_key}",
+                              on_click=cancel_rename,
+                              use_container_width=True)
+
+            else:
+                # ── MODE NORMAL : titre + menu ⋮ (2 colonnes) ──
+                pin_class = "pinned" if is_pinned_item else "unpinned"
+                active_class = "active-session" if is_active else ""
+                col_title, col_menu = st.columns([5.5, 0.9])
+
+                with col_title:
+                    # Marqueur placé INSIDE la colonne pour que le parent stHorizontalBlock contienne la classe
+                    st.markdown(f'<div class="conv-row-marker {pin_class} {active_class}"></div>', unsafe_allow_html=True)
+                    if st.button(title_clean, key=f"nav_{session_key}", use_container_width=True):
+                        st.session_state.session_id = session_key
+                        st.rerun()
+
+                with col_menu:
+                    pin_label  = "Désépingler" if is_pinned_item else "Épingler"
+                    with st.popover("", icon=":material/more_vert:",
+                                    key=f"menu_pop_{session_key}",
+                                    use_container_width=True):
+                        # Épingler / Désépingler
+                        st.button(
+                            pin_label,
+                            key=f"menu_pin_{session_key}",
+                            on_click=toggle_pin_session,
+                            args=(st.session_state.email,
+                                  st.session_state.commerce_id,
+                                  session_key),
+                            use_container_width=True
+                        )
+                        # Renommer
+                        st.button(
+                            "Renommer",
+                            key=f"menu_rename_{session_key}",
+                            on_click=start_rename_mode,
+                            args=(session_key,),
+                            use_container_width=True
+                        )
+                        # Supprimer
+                        if st.button("Supprimer", key=f"menu_del_{session_key}",
+                                     use_container_width=True):
+                            confirm_delete_dialog(
+                                session_key, title_clean,
+                                st.session_state.email,
+                                st.session_state.commerce_id,
+                                is_active
+                            )
+
+        # ── CONTENEUR DÉFILANT POUR LES CONVERSATIONS (géré via CSS) ──
+        with st.container(key="conv_list_container"):
+            # Si recherche active, on affiche les résultats formatés avec extraits de texte
+            if search_query:
+                if all_sessions:
+                    for s in all_sessions:
+                        # Récupération et formatage de l'extrait
+                        snippet = s.get("snippet", "")
+                        if not snippet:
+                            snippet = "Correspondance trouvée dans le titre de la discussion"
+                            
+                        is_active = (s["session_id"] == st.session_state.session_id)
+                        title_prefix = "● " if is_active else ""
                         
-                    is_active = (s["session_id"] == st.session_state.session_id)
-                    title_prefix = "● " if is_active else ""
-                    
-                    st.markdown(f"""
-                        <div class="search-card-container">
-                            <div class="chat-card-html">
-                                <span class="chat-card-icon">💬</span>
-                                <div class="chat-card-body">
-                                    <div class="chat-card-title">{title_prefix}{clean_title(s['title'])}</div>
-                                    <div class="chat-card-snippet">{snippet}</div>
+                        st.markdown(f"""
+                            <div class="search-card-container">
+                                <div class="chat-card-html">
+                                    <span class="chat-card-icon">💬</span>
+                                    <div class="chat-card-body">
+                                        <div class="chat-card-title">{title_prefix}{clean_title(s['title'])}</div>
+                                        <div class="chat-card-snippet">{snippet}</div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    
-                    # Bouton invisible superposé pour capter le clic sur la carte HTML
-                    if st.button("", key=f"search_btn_{s['session_id']}", use_container_width=True):
-                        st.session_state.session_id = s["session_id"]
-                        # Sauvegarder le terme de recherche pour scroller jusqu'au message
-                        st.session_state.highlight_query = search_query
-                        st.rerun()
-            else:
-                st.caption("Aucun résultat trouvé")
-        else:
-            pinned_sessions = [s for s in all_sessions if s.get("is_pinned", False)]
-            recent_sessions = [s for s in all_sessions if not s.get("is_pinned", False)]
-
-            def render_conv_row(s, is_pinned_item):
-                is_active = (s["session_id"] == st.session_state.session_id)
-                title_clean = clean_title(s["title"])
-                session_key = s["session_id"]
-
-                if st.session_state.get("rename_session_id") == session_key:
-                    # ── MODE RENOMMAGE : pas de conv-row-marker pour ne pas activer le CSS de hover ──
-                    _email = st.session_state.email
-                    _cid   = st.session_state.commerce_id
-                    inp_col, ok_col, cancel_col = st.columns([4.2, 0.7, 0.7])
-                    with inp_col:
-                        # Marqueur placé INSIDE la colonne pour que le parent stHorizontalBlock contienne la classe
-                        st.markdown('<div class="rename-mode-marker"></div>', unsafe_allow_html=True)
-                        st.text_input(
-                            "",
-                            value=title_clean,
-                            max_chars=50,
-                            key=f"rename_input_{session_key}",
-                            label_visibility="collapsed",
-                            on_change=save_rename,
-                            args=(session_key, _email, _cid)
-                        )
-                    with ok_col:
-                        st.button("✓", key=f"rename_ok_{session_key}",
-                                  on_click=save_rename,
-                                  args=(session_key, _email, _cid),
-                                  use_container_width=True)
-                    with cancel_col:
-                        st.button("✕", key=f"rename_cancel_{session_key}",
-                                  on_click=cancel_rename,
-                                  use_container_width=True)
-
-                else:
-                    # ── MODE NORMAL : titre + menu ⋮ (2 colonnes) ──
-                    pin_class = "pinned" if is_pinned_item else "unpinned"
-                    active_class = "active-session" if is_active else ""
-                    col_title, col_menu = st.columns([5.5, 0.9])
-
-                    with col_title:
-                        # Marqueur placé INSIDE la colonne pour que le parent stHorizontalBlock contienne la classe
-                        st.markdown(f'<div class="conv-row-marker {pin_class} {active_class}"></div>', unsafe_allow_html=True)
-                        if st.button(title_clean, key=f"nav_{session_key}", use_container_width=True):
-                            st.session_state.session_id = session_key
+                        """, unsafe_allow_html=True)
+                        
+                        # Bouton invisible superposé pour capter le clic sur la carte HTML
+                        if st.button("", key=f"search_btn_{s['session_id']}", use_container_width=True):
+                            st.session_state.session_id = s["session_id"]
+                            # Sauvegarder le terme de recherche pour scroller jusqu'au message
+                            st.session_state.highlight_query = search_query
                             st.rerun()
-
-                    with col_menu:
-                        pin_label  = "Désépingler" if is_pinned_item else "Épingler"
-                        with st.popover("", icon=":material/more_vert:",
-                                        key=f"menu_pop_{session_key}",
-                                        use_container_width=True):
-                            # Épingler / Désépingler
-                            st.button(
-                                pin_label,
-                                key=f"menu_pin_{session_key}",
-                                on_click=toggle_pin_session,
-                                args=(st.session_state.email,
-                                      st.session_state.commerce_id,
-                                      session_key),
-                                use_container_width=True
-                            )
-                            # Renommer
-                            st.button(
-                                "Renommer",
-                                key=f"menu_rename_{session_key}",
-                                on_click=start_rename_mode,
-                                args=(session_key,),
-                                use_container_width=True
-                            )
-                            # Supprimer
-                            if st.button("Supprimer", key=f"menu_del_{session_key}",
-                                         use_container_width=True):
-                                confirm_delete_dialog(
-                                    session_key, title_clean,
-                                    st.session_state.email,
-                                    st.session_state.commerce_id,
-                                    is_active
-                                )
-
-
-            # 1. Section épinglés
-            if pinned_sessions:
-                # Spacer + header dans un seul bloc markdown pour garantir la visibilité
-                st.markdown('<div class="sidebar-section-header">Épinglés</div>', unsafe_allow_html=True)
-                for s in pinned_sessions:
-                    render_conv_row(s, is_pinned_item=True)
-                # Ligne de séparation fine entre les deux sections
-                st.markdown('<hr class="sidebar-divider">', unsafe_allow_html=True)
-
-            # 2. Section récents
-            if recent_sessions:
-                st.markdown('<div class="sidebar-section-header">Récents</div>', unsafe_allow_html=True)
-                for s in recent_sessions:
-                    render_conv_row(s, is_pinned_item=False)
+                else:
+                    st.caption("Aucun résultat trouvé")
             else:
-                st.markdown('<div class="sidebar-section-header">Récents</div>', unsafe_allow_html=True)
-                st.caption("Aucune conversation")
+                pinned_sessions = [s for s in all_sessions if s.get("is_pinned", False)]
+                recent_sessions = [s for s in all_sessions if not s.get("is_pinned", False)]
+
+                # 1. Section épinglés
+                if pinned_sessions:
+                    st.markdown('<div class="sidebar-section-header">Épinglés</div>', unsafe_allow_html=True)
+                    for s in pinned_sessions:
+                        render_conv_row(s, is_pinned_item=True)
+                    # Ligne de séparation fine entre les deux sections
+                    st.markdown('<hr class="sidebar-divider">', unsafe_allow_html=True)
+
+                # 2. Section récents
+                if recent_sessions:
+                    st.markdown('<div class="sidebar-section-header">Récents</div>', unsafe_allow_html=True)
+                    for s in recent_sessions:
+                        render_conv_row(s, is_pinned_item=False)
+                else:
+                    st.markdown('<div class="sidebar-section-header">Récents</div>', unsafe_allow_html=True)
+                    st.caption("Aucune conversation")
                 
 
 
