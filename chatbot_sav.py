@@ -311,13 +311,13 @@ st.markdown("""
             overflow: visible !important;
         }
         .sidebar-section-header {
-            font-size: 0.78rem !important;
-            font-weight: 600 !important;
-            color: #6b7280 !important;
-            padding: 0 0 4px 8px !important;
+            font-size: 0.8rem !important;
+            font-weight: 500 !important;
+            color: #8a8a8a !important;
+            padding: 8px 0 6px 6px !important;
             margin: 0 !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.05em !important;
+            text-transform: none !important;
+            letter-spacing: 0.01em !important;
             display: block !important;
             line-height: 1.4 !important;
         }
@@ -328,35 +328,7 @@ st.markdown("""
             opacity: 0.6 !important;
         }
         
-        /* Contenu du popover */
-        div[data-testid="stPopoverBody"] {
-            border: 1px solid #e5e5e5 !important;
-            border-radius: 8px !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
-            padding: 12px !important;
-            background-color: #ffffff !important;
-        }
-        
-        
-        div[data-testid="stPopoverBody"] p {
-            color: #4b5563 !important;
-            font-size: 0.85rem !important;
-            margin-bottom: 8px !important;
-        }
-        div[data-testid="stPopoverBody"] .stButton > button {
-            background-color: transparent !important;
-            border: 1px solid #e5e5e5 !important;
-            color: #b91c1c !important;
-            font-weight: 500 !important;
-            border-radius: 6px !important;
-            text-align: center !important;
-            padding: 6px 12px !important;
-            width: 100% !important;
-        }
-        div[data-testid="stPopoverBody"] .stButton > button:hover {
-            background-color: #fef2f2 !important;
-            border-color: #fca5a5 !important;
-        }
+        /* Note: les styles du popover contextuel sont définis plus bas dans le CSS (section POPOVER) */
         
         /* Style du champ de recherche de la sidebar */
         [data-testid="stSidebar"] [data-testid="stTextInput"] {
@@ -506,8 +478,9 @@ st.markdown("""
             height: 34px !important;
         }
 
-        /* Hover sur toute la ligne */
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker):hover {
+        /* Hover sur toute la ligne OU ligne active */
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker):hover,
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker.active-session) {
             background-color: rgba(0, 0, 0, 0.05) !important;
         }
 
@@ -559,10 +532,6 @@ st.markdown("""
             display: block !important;
         }
 
-        /* Indiquer l'état actif (discussion courante) */
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker.pinned) .stButton > button {
-            font-weight: 500 !important;
-        }
 
         /* ====== BOUTON MENU ⋮ ====== */
 
@@ -1311,13 +1280,13 @@ else:
                 else:
                     # ── MODE NORMAL : titre + menu ⋮ (2 colonnes) ──
                     pin_class = "pinned" if is_pinned_item else "unpinned"
+                    active_class = "active-session" if is_active else ""
                     col_title, col_menu = st.columns([5.5, 0.9])
 
                     with col_title:
                         # Marqueur placé INSIDE la colonne pour que le parent stHorizontalBlock contienne la classe
-                        st.markdown(f'<div class="conv-row-marker {pin_class}"></div>', unsafe_allow_html=True)
-                        lbl = ("● " if is_active else "") + title_clean
-                        if st.button(lbl, key=f"nav_{session_key}", use_container_width=True):
+                        st.markdown(f'<div class="conv-row-marker {pin_class} {active_class}"></div>', unsafe_allow_html=True)
+                        if st.button(title_clean, key=f"nav_{session_key}", use_container_width=True):
                             st.session_state.session_id = session_key
                             st.rerun()
 
