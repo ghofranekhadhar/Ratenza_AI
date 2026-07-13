@@ -2144,8 +2144,20 @@ def generate_chatbot_response(client_name, client_email, commerce_name, conversa
         ORDER_INTENTS = {"commande", "livraison", "Commande", "Livraison"}
         if any(i in ORDER_INTENTS for i in intents) and commerce_id:
             try:
-                orders = chatbot_orders.get_orders_by_email(client_email, commerce_id)
-                order_block = chatbot_orders.format_order_context(orders)
+                # Détection d'un numéro de commande explicite dans le message
+                numero_mentionne = chatbot_orders.extract_order_number(user_message)
+
+                if numero_mentionne:
+                    # L'utilisateur cite un numéro précis → contexte focalisé + filtrage email (sécurité)
+                    order = chatbot_orders.get_order_by_number(numero_mentionne, commerce_id, client_email)
+                    order_block = chatbot_orders.format_focused_order_context(order, numero_mentionne)
+                    log_detail = f"commande #{numero_mentionne} (sécurisé email+commerce_id)"
+                else:
+                    # Pas de numéro → liste toutes les commandes du client
+                    orders = chatbot_orders.get_orders_by_email(client_email, commerce_id)
+                    order_block = chatbot_orders.format_order_context(orders)
+                    log_detail = f"{len(orders)} commande(s) du client"
+
                 system_instruction += (
                     "\n\n=== DONNÉES COMMANDES EN TEMPS RÉEL (PRIORITÉ ABSOLUE) ===\n"
                     + order_block +
@@ -2153,7 +2165,7 @@ def generate_chatbot_response(client_name, client_email, commerce_name, conversa
                     "N'invente rien. Ne dis JAMAIS 'je n'ai pas accès à la base de données'. "
                     "Ne donne JAMAIS un délai générique de 3-5 jours.\n"
                 )
-                print(f"[ORDER_INJECT] {len(orders)} commande(s) injectée(s) dans le prompt pour intent: {intents}")
+                print(f"[ORDER_INJECT] Injecté : {log_detail} | intents: {intents}")
             except Exception as oe:
                 print(f"[ORDER_INJECT] Erreur injection commandes: {oe}")
 

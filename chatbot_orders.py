@@ -56,9 +56,14 @@ def get_orders_by_email(email: str, commerce_id: str) -> list:
         return []
 
 
-def get_order_by_number(numero_commande: str, commerce_id: str) -> dict | None:
+def get_order_by_number(numero_commande: str, commerce_id: str, client_email: str) -> dict | None:
     """
-    Récupère une commande précise par son numéro, toujours filtrée par commerce_id.
+    Récupère une commande précise par son numéro.
+
+    Filtrage STRICT par numero_commande + commerce_id + client_email.
+    Un client ne peut jamais accéder à la commande d'un autre client,
+    même s'il connaît le numéro de commande.
+    Retourne None si la commande n'appartient pas à ce client.
     """
     try:
         mongo_client = MongoClient(config.MONGO_URI, serverSelectionTimeoutMS=1500)
@@ -66,7 +71,8 @@ def get_order_by_number(numero_commande: str, commerce_id: str) -> dict | None:
 
         order = db.commandes.find_one({
             "numero_commande": numero_commande.strip(),
-            "commerce_id": commerce_id.strip()
+            "commerce_id": commerce_id.strip(),
+            "client_email": {"$regex": f"^{client_email.strip()}$", "$options": "i"}
         })
         mongo_client.close()
         return order
@@ -74,6 +80,47 @@ def get_order_by_number(numero_commande: str, commerce_id: str) -> dict | None:
         print(f"[chatbot_orders] Erreur MongoDB get_order_by_number : {e}")
         return None
 
+
+import re as _re
+
+# Pattern pour détecter les numéros de commande dans les messages utilisateur
+_ORDER_PATTERN = _re.compile(r'\b(CMD-\d{4}-\d+)\b', _re.IGNORECASE)
+
+
+def extract_order_number(message: str) -> str | None:
+    """
+    Détecte si le message contient un numéro de commande (ex: CMD-2026-002).
+    Retourne le numéro en majuscules ou None si absent.
+    """
+    match = _ORDER_PATTERN.search(message)
+    return match.group(1).upper() if match else None
+
+
+def format_focused_order_context(order: dict | None, numero_demande: str) -> str:
+    """
+    Formate le contexte pour une commande précise demandée par numéro.
+    Si order est None (commande non trouvée / accès refusé) → message de refus clair.
+    """
+    if order is None:
+        return (
+            f"\n### COMMANDE {numero_demande} (MongoDB — retenza_ai.commandes) :\n"
+            f"  🔒 La commande {numero_demande} n'existe pas ou n'appartient pas à ce client.\n"
+            "  Ne révèle aucune information sur cette commande. Informe le client qu'elle est "
+            "introuvable dans son compte.\n"
+            "--------------------------------------------------\n"
+        )
+    context = (
+        f"\n### COMMANDE {numero_demande} — DÉTAIL COMPLET (MongoDB) :\n"
+        "  📦 Données réelles de CETTE commande précise :\n"
+    )
+    context += _format_single_order(order) + "\n"
+    context += (
+        "\n  ⚡ INSTRUCTION LLM : Réponds UNIQUEMENT avec les infos de CETTE commande. "
+        "Cite le statut, la date d'expédition, le transporteur et le numéro de suivi. "
+        "NE MÉLANGE PAS avec d'autres commandes.\n"
+        "--------------------------------------------------\n"
+    )
+    return context
 
 def _days_remaining(date_livraison_estimee) -> str:
     """Calcule le nombre de jours restants avant la livraison estimée."""
