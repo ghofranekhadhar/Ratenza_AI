@@ -464,14 +464,15 @@ st.markdown("""
             gap: 2px !important;
         }
 
-        /* ── Ligne complète (le stHorizontalBlock) ── */
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) {
+        /* ── Ligne complète (le stHorizontalBlock) dans la sidebar ── */
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] {
             gap: 0 !important;
             align-items: center !important;
             padding: 0px 6px !important;
             margin: 0 !important;
             border-radius: 8px !important;
             background: transparent !important;
+            background-color: transparent !important;
             border: none !important;
             box-shadow: none !important;
             transition: background-color 0.15s ease !important;
@@ -479,27 +480,25 @@ st.markdown("""
         }
 
         /* Hover sur toute la ligne OU ligne active */
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker):hover,
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker.active-session) {
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:hover,
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(.active-session) {
             background-color: #ebe5e0 !important;
         }
 
-        /* Forcer ABSOLUMENT TOUT à l'intérieur des lignes de conversation en transparent */
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) *,
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) [data-testid="column"],
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .element-container,
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .stButton,
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) > div {
+        /* Forcer absolument tout à l'intérieur des colonnes de la sidebar en transparent */
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] *,
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] [data-testid="column"],
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .element-container,
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton,
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] > div {
             background: transparent !important;
             background-color: transparent !important;
             border: none !important;
             box-shadow: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
         }
 
         /* ── Bouton Titre de Discussion ── */
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .stButton > button {
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button {
             background: transparent !important;
             background-color: transparent !important;
             border: none !important;
@@ -517,18 +516,18 @@ st.markdown("""
             justify-content: flex-start !important;
             text-align: left !important;
         }
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .stButton > button:hover,
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .stButton > button:focus,
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .stButton > button:active {
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button:hover,
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button:focus,
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button:active {
             background: transparent !important;
             background-color: transparent !important;
             border: none !important;
             box-shadow: none !important;
         }
 
-        /* Override stérile des conteneurs internes du bouton Streamlit */
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .stButton > button > div,
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .stButton > button > div > div {
+        /* Override des conteneurs internes du bouton Streamlit */
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button > div,
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button > div > div {
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
@@ -537,8 +536,8 @@ st.markdown("""
         }
 
         /* Ellipsis sur le texte du titre */
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .stButton > button p,
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .stButton > button span {
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button p,
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button span {
             white-space: nowrap !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
@@ -550,7 +549,7 @@ st.markdown("""
         /* ====== BOUTON MENU ⋮ ====== */
 
         /* Masqué par défaut (opacité 0), sans bordure, visible au survol */
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) div[data-testid="stPopover"] > button {
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] div[data-testid="stPopover"] > button {
             opacity: 0 !important;
             width: 28px !important;
             min-width: 28px !important;
@@ -569,20 +568,20 @@ st.markdown("""
         }
 
         /* Afficher au hover de la ligne OU quand le menu est ouvert */
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker):hover div[data-testid="stPopover"] > button,
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) div[data-testid="stPopover"] > button[aria-expanded="true"] {
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:hover div[data-testid="stPopover"] > button,
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] div[data-testid="stPopover"] > button[aria-expanded="true"] {
             opacity: 1 !important;
         }
 
         /* Survol direct de l'icône ⋮ */
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) div[data-testid="stPopover"] > button:hover {
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] div[data-testid="stPopover"] > button:hover {
             color: #171717 !important;
             background: rgba(0, 0, 0, 0.08) !important;
             border-radius: 4px !important;
         }
 
-        /* Cacher la flèche de chevron vers le bas par défaut de st.popover */
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) div[data-testid="stPopover"] > button svg {
+        /* Cacher la flèche de chevron vers le bas par défaut de st.popover dans la sidebar */
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] div[data-testid="stPopover"] > button svg:nth-of-type(2) {
             display: none !important;
         }
 
