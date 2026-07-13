@@ -77,12 +77,8 @@ st.markdown("""
             color: #991b1b;
             border: 1px solid #fca5a5;
         }        /* ====== SIDEBAR (Style Claude) ====== */
-        [data-testid="stSidebar"],
-        [data-testid="stSidebar"] > div:first-child {
+        [data-testid="stSidebar"] {
             background-color: #f5f0ec !important;
-            overflow: hidden !important;
-            height: 100vh !important;
-            max-height: 100vh !important;
         }
         [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3, [data-testid="stSidebar"] p {
             color: #0d0d0d !important;
@@ -209,54 +205,44 @@ st.markdown("""
         }
 
         /* ====== SIDEBAR PROFILE POPOVER (Style Claude) ====== */
-        
-        /* Conteneur défilant des conversations dans la sidebar */
-        div.st-key-conv_list_container {
-            height: calc(100vh - 230px) !important;
-            max-height: calc(100vh - 230px) !important;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
-            border: none !important;
-            padding: 0 4px !important;
-            margin: 0 !important;
-            scrollbar-width: none !important; /* Firefox */
-        }
-        div.st-key-conv_list_container::-webkit-scrollbar {
-            display: none !important; /* Chrome/Safari */
-        }
-
-        /* La sidebar elle-même est statique, pas de défilement global */
+        /* Conteneur principal : position relative pour que le last-child absolute soit bien ancré */
         [data-testid="stSidebarUserContent"] {
             position: relative !important;
             height: 100vh !important;
             overflow: hidden !important;
         }
 
-        /* Espacement et conteneur principal */
-        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] {
-            gap: 2px !important;
-            height: 100% !important;
-            overflow: hidden !important;
+        /* La zone de contenu scrollable pour les conversations uniquement */
+        div.st-key-conv_list_container {
+            height: calc(100vh - 200px) !important;
+            max-height: calc(100vh - 200px) !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            scrollbar-width: none !important; /* Firefox */
         }
-
-        /* Bouton profil toujours ancré de manière absolue au bas de la sidebar */
-        [data-testid="stSidebarUserContent"] div.st-key-profile_popover {
+        div.st-key-conv_list_container::-webkit-scrollbar {
+            display: none !important; /* Chrome/Safari */
+        }
+        
+        /* Bouton profil toujours ancré de manière absolue au bas de la sidebar (slide avec elle si fermée) */
+        div.st-key-profile_popover {
             position: absolute !important;
-            bottom: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            padding: 12px 16px 20px 16px !important;
-            background-color: #f5f0ec !important;
-            border-top: 1px solid #e5e5e5 !important;
+            bottom: 16px !important;
+            left: 12px !important;
+            right: 12px !important;
             z-index: 1000 !important;
+            background-color: #f5f0ec !important;
             box-sizing: border-box !important;
         }
         
-        [data-testid="stSidebarUserContent"] div.st-key-profile_popover [data-testid="stPopover"] > button {
+        div.st-key-profile_popover div[data-testid="stPopover"] > button {
             background-color: #ffffff !important; /* Fond blanc */
             border: 1px solid #e5e5e5 !important; /* Bordure fine */
             color: #0d0d0d !important;
-            padding: 8px 12px 8px 48px !important; /* Laisse de l'espace à gauche pour l'avatar ::before */
+            padding: 8px 12px !important;
             border-radius: 8px !important;
             width: 100% !important;
             text-align: left !important;
@@ -269,13 +255,13 @@ st.markdown("""
             font-weight: 600 !important;
             transition: background-color 0.15s ease, border-color 0.15s ease !important;
         }
-        [data-testid="stSidebarUserContent"] div.st-key-profile_popover [data-testid="stPopover"] > button:hover {
+        div.st-key-profile_popover div[data-testid="stPopover"] > button:hover {
             background-color: #f9f9f9 !important;
             border-color: #cbd5e1 !important;
         }
 
         /* Le conteneur du texte dans le bouton popover */
-        [data-testid="stSidebarUserContent"] div.st-key-profile_popover div[data-testid="stPopover"] > button > div {
+        div.st-key-profile_popover div[data-testid="stPopover"] > button > div {
             display: flex !important;
             flex-direction: column !important;
             align-items: flex-start !important;
@@ -284,7 +270,7 @@ st.markdown("""
         }
 
         /* Modifier le texte principal du bouton */
-        [data-testid="stSidebarUserContent"] div.st-key-profile_popover div[data-testid="stPopover"] > button p {
+        div.st-key-profile_popover div[data-testid="stPopover"] > button p {
             font-size: 0.85rem !important;
             font-weight: 600 !important;
             color: #0f172a !important;
@@ -293,7 +279,7 @@ st.markdown("""
         }
 
         /* Ajouter le sous-titre "Client connecté" via ::after sur le conteneur du texte */
-        [data-testid="stSidebarUserContent"] div.st-key-profile_popover div[data-testid="stPopover"] > button > div::after {
+        div.st-key-profile_popover div[data-testid="stPopover"] > button > div::after {
             content: "Client connecté" !important;
             font-size: 0.72rem !important;
             color: #6b7280 !important;
@@ -302,7 +288,7 @@ st.markdown("""
         }
 
         /* Le chevron ▼ à droite du bouton popover */
-        [data-testid="stSidebarUserContent"] div.st-key-profile_popover div[data-testid="stPopover"] > button::after {
+        div.st-key-profile_popover div[data-testid="stPopover"] > button::after {
             content: "▼" !important;
             font-size: 0.65rem !important;
             color: #94a3b8 !important;
@@ -311,7 +297,7 @@ st.markdown("""
         }
 
         /* Rotation du chevron quand ouvert */
-        [data-testid="stSidebarUserContent"] div.st-key-profile_popover div[data-testid="stPopover"] > button[aria-expanded="true"]::after {
+        div.st-key-profile_popover div[data-testid="stPopover"] > button[aria-expanded="true"]::after {
             transform: rotate(180deg) !important;
         }
 
@@ -1382,8 +1368,8 @@ else:
         # Injecter dynamiquement l'avatar initiales en CSS pour le bouton popover profil UNIQUEMENT
         st.markdown(f"""
             <style>
-                /* Cible uniquement le popover profil (clé profile_popover) */
-                [data-testid="stSidebarUserContent"] div.st-key-profile_popover [data-testid="stPopover"] > button::before {{
+                /* Cible uniquement le popover profil */
+                div.st-key-profile_popover div[data-testid="stPopover"] > button::before {{
                     content: "{initials[0]}";
                     width: 32px;
                     height: 32px;
@@ -1396,10 +1382,6 @@ else:
                     border-radius: 50%;
                     font-size: 0.85rem;
                     flex-shrink: 0;
-                    position: absolute;
-                    left: 8px;
-                    top: 50%;
-                    transform: translateY(-50%);
                 }}
             </style>
         """, unsafe_allow_html=True)
