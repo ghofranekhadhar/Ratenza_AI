@@ -76,9 +76,9 @@ st.markdown("""
             background-color: #fef2f2;
             color: #991b1b;
             border: 1px solid #fca5a5;
-        }        /* ====== SIDEBAR (Style ChatGPT Clair) ====== */
+        }        /* ====== SIDEBAR (Style Claude) ====== */
         [data-testid="stSidebar"] {
-            background-color: #f9f9f9 !important;
+            background-color: #f5f0ec !important;
         }
         [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3, [data-testid="stSidebar"] p {
             color: #0d0d0d !important;
@@ -114,7 +114,7 @@ st.markdown("""
             display: inline-flex !important;
         }
         [data-testid="stSidebar"] .stButton > button:hover {
-            background-color: #ececec !important;
+            background-color: #ebe5e0 !important;
         }
         /* Bouton "Nouveau chat" specifique (style premium ChatGPT) - cible specifiquement le premier element de la sidebar */
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div:nth-child(2) .stButton > button {
@@ -127,8 +127,8 @@ st.markdown("""
             transition: background-color 0.15s ease, border-color 0.15s ease !important;
         }
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div:nth-child(2) .stButton > button:hover {
-            background-color: #f9f9f9 !important;
-            border-color: #cbd5e1 !important;
+            background-color: #ebe5e0 !important;
+            border-color: #d5cfc9 !important;
         }
 
 
@@ -233,7 +233,7 @@ st.markdown("""
             width: var(--sidebar-width, 242px) !important;
             padding: 0 12px !important;
             z-index: 1000 !important;
-            background-color: #f9f9f9 !important;
+            background-color: #f5f0ec !important;
             box-sizing: border-box !important;
         }
         
@@ -470,22 +470,25 @@ st.markdown("""
             align-items: center !important;
             padding: 0px 6px !important;
             margin: 0 !important;
-            border-radius: 6px !important;
+            border-radius: 8px !important;
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
             transition: background-color 0.15s ease !important;
-            height: 34px !important;
+            height: 36px !important;
         }
 
         /* Hover sur toute la ligne OU ligne active */
         div[data-testid="stHorizontalBlock"]:has(.conv-row-marker):hover,
         div[data-testid="stHorizontalBlock"]:has(.conv-row-marker.active-session) {
-            background-color: rgba(0, 0, 0, 0.05) !important;
+            background-color: #ebe5e0 !important;
         }
 
-        /* Enlever fond/bordures des colonnes de la ligne */
-        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) [data-testid="column"] {
+        /* Forcer TOUS les conteneurs intermédiaires à être transparents */
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) [data-testid="column"],
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .element-container,
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .stButton,
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) > div {
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
@@ -496,20 +499,29 @@ st.markdown("""
         /* ── Bouton Titre de Discussion ── */
         div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .stButton > button {
             background: transparent !important;
+            background-color: transparent !important;
             border: none !important;
             box-shadow: none !important;
             outline: none !important;
-            height: 30px !important;
-            min-height: 30px !important;
-            padding: 0 4px !important;
+            height: 32px !important;
+            min-height: 32px !important;
+            padding: 0 8px !important;
             margin: 0 !important;
-            border-radius: 4px !important;
-            color: #0d0d0d !important;
-            font-size: 0.85rem !important;
+            border-radius: 0 !important;
+            color: #1a1a1a !important;
+            font-size: 0.875rem !important;
             font-weight: 400 !important;
             width: 100% !important;
             justify-content: flex-start !important;
             text-align: left !important;
+        }
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .stButton > button:hover,
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .stButton > button:focus,
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .stButton > button:active {
+            background: transparent !important;
+            background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
         }
 
         /* Override stérile des conteneurs internes du bouton Streamlit */
