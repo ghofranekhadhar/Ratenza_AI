@@ -484,12 +484,14 @@ st.markdown("""
             background-color: #ebe5e0 !important;
         }
 
-        /* Forcer TOUS les conteneurs intermédiaires à être transparents */
+        /* Forcer ABSOLUMENT TOUT à l'intérieur des lignes de conversation en transparent */
+        div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) *,
         div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) [data-testid="column"],
         div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .element-container,
         div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) .stButton,
         div[data-testid="stHorizontalBlock"]:has(.conv-row-marker) > div {
             background: transparent !important;
+            background-color: transparent !important;
             border: none !important;
             box-shadow: none !important;
             padding: 0 !important;
