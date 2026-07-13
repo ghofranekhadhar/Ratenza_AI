@@ -78,7 +78,7 @@ st.markdown("""
             border: 1px solid #fca5a5;
         }        /* ====== SIDEBAR (Style Claude) ====== */
         [data-testid="stSidebar"] {
-            background-color: #f9f9f9 !important;
+            background-color: #f5f0ec !important;
         }
         [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3, [data-testid="stSidebar"] p {
             color: #0d0d0d !important;
@@ -114,7 +114,7 @@ st.markdown("""
             display: inline-flex !important;
         }
         [data-testid="stSidebar"] .stButton > button:hover {
-            background-color: #ececec !important;
+            background-color: #ebe5e0 !important;
         }
         /* Bouton "Nouveau chat" specifique (style premium ChatGPT) - cible specifiquement le premier element de la sidebar */
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div:nth-child(2) .stButton > button {
@@ -127,8 +127,8 @@ st.markdown("""
             transition: background-color 0.15s ease, border-color 0.15s ease !important;
         }
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div:nth-child(2) .stButton > button:hover {
-            background-color: #f9f9f9 !important;
-            border-color: #cbd5e1 !important;
+            background-color: #ebe5e0 !important;
+            border-color: #d5cfc9 !important;
         }
 
 
@@ -204,36 +204,40 @@ st.markdown("""
             padding-bottom: 2rem !important;
         }
 
-        /* ====== ZONE DE CONTENU SCROLLABLE ====== */
-
-        /* stSidebarUserContent = le vrai conteneur scrollable utilisateur dans Streamlit 1.58 */
+        /* ====== SIDEBAR PROFILE POPOVER (Style ChatGPT) ====== */
+        /* Conteneur principal : position relative pour que le last-child absolute soit bien ancré */
         [data-testid="stSidebarUserContent"] {
             position: relative !important;
-            height: calc(100vh - 5px) !important;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
-            padding-bottom: 75px !important;
-            scrollbar-width: none !important;
-        }
-        [data-testid="stSidebarUserContent"]::-webkit-scrollbar {
-            display: none !important;
+            height: 100vh !important;
+            overflow: hidden !important;
         }
 
-        /* ====== SIDEBAR PROFILE POPOVER ====== */
+        /* La zone de contenu scrollable de la sidebar (tout sauf le bouton profil) */
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] {
+            height: calc(100vh - 90px) !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            padding-bottom: 4px !important;
+            /* Masquer la scrollbar visuellement (gardee fonctionnelle) */
+            scrollbar-width: none !important;
+        }
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"]::-webkit-scrollbar {
+            display: none !important;
+        }
         
         /* Bouton profil toujours ancré en bas de la sidebar */
-        div:has(.profile-marker) ~ div:last-child {
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child {
             position: fixed !important;
             bottom: 12px !important;
             left: 0px !important;
-            width: var(--sidebar-width, 244px) !important;
+            width: var(--sidebar-width, 242px) !important;
             padding: 0 12px !important;
             z-index: 1000 !important;
-            background-color: #f9f9f9 !important; /* Même gris que la sidebar */
+            background-color: #f5f0ec !important;
             box-sizing: border-box !important;
         }
         
-        div:has(.profile-marker) ~ div:last-child [data-testid="stPopover"] > button {
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child [data-testid="stPopover"] > button {
             background-color: #ffffff !important; /* Fond blanc */
             border: 1px solid #e5e5e5 !important; /* Bordure fine */
             color: #0d0d0d !important;
@@ -250,13 +254,13 @@ st.markdown("""
             font-weight: 600 !important;
             transition: background-color 0.15s ease, border-color 0.15s ease !important;
         }
-        div:has(.profile-marker) ~ div:last-child [data-testid="stPopover"] > button:hover {
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child [data-testid="stPopover"] > button:hover {
             background-color: #f9f9f9 !important;
             border-color: #cbd5e1 !important;
         }
 
         /* Le conteneur du texte dans le bouton popover */
-        div:has(.profile-marker) ~ div:last-child div[data-testid="stPopover"] > button > div {
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button > div {
             display: flex !important;
             flex-direction: column !important;
             align-items: flex-start !important;
@@ -265,7 +269,7 @@ st.markdown("""
         }
 
         /* Modifier le texte principal du bouton */
-        div:has(.profile-marker) ~ div:last-child div[data-testid="stPopover"] > button p {
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button p {
             font-size: 0.85rem !important;
             font-weight: 600 !important;
             color: #0f172a !important;
@@ -274,7 +278,7 @@ st.markdown("""
         }
 
         /* Ajouter le sous-titre "Client connecté" via ::after sur le conteneur du texte */
-        div:has(.profile-marker) ~ div:last-child div[data-testid="stPopover"] > button > div::after {
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button > div::after {
             content: "Client connecté" !important;
             font-size: 0.72rem !important;
             color: #6b7280 !important;
@@ -283,7 +287,7 @@ st.markdown("""
         }
 
         /* Le chevron ▼ à droite du bouton popover */
-        div:has(.profile-marker) ~ div:last-child div[data-testid="stPopover"] > button::after {
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button::after {
             content: "▼" !important;
             font-size: 0.65rem !important;
             color: #94a3b8 !important;
@@ -292,7 +296,7 @@ st.markdown("""
         }
 
         /* Rotation du chevron quand ouvert */
-        div:has(.profile-marker) ~ div:last-child div[data-testid="stPopover"] > button[aria-expanded="true"]::after {
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button[aria-expanded="true"]::after {
             transform: rotate(180deg) !important;
         }
 
@@ -456,21 +460,12 @@ st.markdown("""
         }
 
         /* Compacité verticale globale de la sidebar */
-        /* Espacement uniforme : 0 gap, toutes les element-containers en margin 0 */
-        [data-testid="stSidebarUserContent"] [data-testid="stVerticalBlock"] {
-            gap: 0px !important;
-        }
-        [data-testid="stSidebarUserContent"] .element-container {
-            margin-top: 0 !important;
-            margin-bottom: 0 !important;
-            padding-top: 0 !important;
-            padding-bottom: 0 !important;
+        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] {
+            gap: 2px !important;
         }
 
-        /* ── Ligne complète (le stHorizontalBlock ou div parent de colonne) dans la sidebar ── */
-        [data-testid="stSidebar"] div:has(> div[data-testid="column"]),
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"],
-        [data-testid="stSidebar"] .stHorizontalBlock {
+        /* ── Ligne complète (le stHorizontalBlock) dans la sidebar ── */
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] {
             gap: 0 !important;
             align-items: center !important;
             padding: 0px 6px !important;
@@ -486,34 +481,24 @@ st.markdown("""
 
         /* Hover sur toute la ligne OU ligne active */
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:hover,
-        [data-testid="stSidebar"] .stHorizontalBlock:hover,
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(.active-session),
-        [data-testid="stSidebar"] .stHorizontalBlock:has(.active-session) {
-            background-color: #ececec !important;
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(.active-session) {
+            background-color: #ebe5e0 !important;
         }
 
-        /* Forcer absolument toutes les colonnes (stColumn) et leurs sous-éléments en transparent */
-        /* IMPORTANT: pointer-events:auto sur les boutons pour garantir la cliquabilité */
-        [data-testid="stSidebar"] [data-testid="stColumn"],
-        [data-testid="stSidebar"] [data-testid="stColumn"] > div,
-        [data-testid="stSidebar"] [data-testid="stColumn"] .element-container,
-        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton {
+        /* Forcer absolument tout à l'intérieur des colonnes de la sidebar en transparent */
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] *,
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] [data-testid="column"],
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .element-container,
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton,
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] > div {
             background: transparent !important;
             background-color: transparent !important;
             border: none !important;
             box-shadow: none !important;
-        }
-        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton > button,
-        [data-testid="stSidebar"] [data-testid="stColumn"] [data-testid="stPopoverButton"] {
-            background: transparent !important;
-            background-color: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            pointer-events: auto !important;
         }
 
         /* ── Bouton Titre de Discussion ── */
-        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton > button {
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button {
             background: transparent !important;
             background-color: transparent !important;
             border: none !important;
@@ -531,9 +516,9 @@ st.markdown("""
             justify-content: flex-start !important;
             text-align: left !important;
         }
-        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton > button:hover,
-        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton > button:focus,
-        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton > button:active {
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button:hover,
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button:focus,
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button:active {
             background: transparent !important;
             background-color: transparent !important;
             border: none !important;
@@ -541,8 +526,8 @@ st.markdown("""
         }
 
         /* Override des conteneurs internes du bouton Streamlit */
-        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton > button > div,
-        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton > button > div > div {
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button > div,
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button > div > div {
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
@@ -551,8 +536,8 @@ st.markdown("""
         }
 
         /* Ellipsis sur le texte du titre */
-        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton > button p,
-        [data-testid="stSidebar"] [data-testid="stColumn"] .stButton > button span {
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button p,
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button span {
             white-space: nowrap !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
@@ -562,10 +547,9 @@ st.markdown("""
 
 
         /* ====== BOUTON MENU ⋮ ====== */
-        /* Scope UNIQUEMENT aux lignes de conversation (stHorizontalBlock) pour ne pas affecter le profil */
 
-        /* Masqué par défaut */
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"] [data-testid="stPopoverButton"] {
+        /* Masqué par défaut (opacité 0), sans bordure, visible au survol */
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] div[data-testid="stPopover"] > button {
             opacity: 0 !important;
             width: 28px !important;
             min-width: 28px !important;
@@ -574,34 +558,30 @@ st.markdown("""
             justify-content: center !important;
             align-items: center !important;
             background: transparent !important;
-            background-color: transparent !important;
             border: none !important;
             box-shadow: none !important;
             padding: 0 !important;
             margin: 0 !important;
             outline: none !important;
             color: #737373 !important;
-            cursor: pointer !important;
-            pointer-events: auto !important;
             transition: opacity 0.15s ease, color 0.15s ease !important;
         }
 
         /* Afficher au hover de la ligne OU quand le menu est ouvert */
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:hover [data-testid="stColumn"] [data-testid="stPopoverButton"],
-        [data-testid="stSidebar"] .stHorizontalBlock:hover [data-testid="stColumn"] [data-testid="stPopoverButton"],
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"] [data-testid="stPopoverButton"][aria-expanded="true"] {
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:hover div[data-testid="stPopover"] > button,
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] div[data-testid="stPopover"] > button[aria-expanded="true"] {
             opacity: 1 !important;
         }
 
         /* Survol direct de l'icône ⋮ */
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"] [data-testid="stPopoverButton"]:hover {
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] div[data-testid="stPopover"] > button:hover {
             color: #171717 !important;
             background: rgba(0, 0, 0, 0.08) !important;
             border-radius: 4px !important;
         }
 
-        /* Cacher la flèche chevron native de st.popover dans les lignes de conv */
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"] [data-testid="stPopoverButton"] svg:last-of-type {
+        /* Cacher la flèche de chevron vers le bas par défaut de st.popover dans la sidebar */
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] div[data-testid="stPopover"] > button svg:nth-of-type(2) {
             display: none !important;
         }
 
@@ -1385,16 +1365,11 @@ else:
         client_short = client_name.split()[0].lower() if client_name else "gho"
         client_email = st.session_state.get("email", "")
         
-        # Spacer pour faire défiler le contenu au-dessus du bouton fixé au bas de la sidebar
-        st.markdown('<div style="height: 60px;"></div>', unsafe_allow_html=True)
-        # Marqueur pour positionner le bouton profil de manière fixe en CSS
-        st.markdown('<div class="profile-marker"></div>', unsafe_allow_html=True)
-        
         # Injecter dynamiquement l'avatar initiales en CSS pour le bouton popover profil UNIQUEMENT
         st.markdown(f"""
             <style>
-                /* Cible le popover profil : dernier sibling après le marqueur */
-                div:has(.profile-marker) ~ div:last-child div[data-testid="stPopover"] > button::before {{
+                /* Cible uniquement le dernier popover de la sidebar principale (profil), pas les colonnes */
+                [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button::before {{
                     content: "{initials[0]}";
                     width: 32px;
                     height: 32px;
