@@ -206,27 +206,27 @@ st.markdown("""
 
         /* ====== SIDEBAR PROFILE POPOVER (Style ChatGPT) ====== */
         /* Conteneur principal : position relative pour que le last-child absolute soit bien ancré */
-        [data-testid="stSidebarUserContent"] {
+        [data-testid="stSidebarContent"] {
             position: relative !important;
             height: 100vh !important;
             overflow: hidden !important;
         }
 
         /* La zone de contenu scrollable de la sidebar (tout sauf le bouton profil) */
-        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] {
+        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] {
             height: calc(100vh - 90px) !important;
             overflow-y: auto !important;
             overflow-x: hidden !important;
-            padding-bottom: 4px !important;
+            padding-bottom: 40px !important; /* Ajout d'un padding pour ne pas être caché par le bouton profil */
             /* Masquer la scrollbar visuellement (gardee fonctionnelle) */
             scrollbar-width: none !important;
         }
-        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"]::-webkit-scrollbar {
+        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"]::-webkit-scrollbar {
             display: none !important;
         }
         
         /* Bouton profil toujours ancré en bas de la sidebar */
-        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child {
+        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] > div:last-child {
             position: fixed !important;
             bottom: 12px !important;
             left: 0px !important;
@@ -237,7 +237,7 @@ st.markdown("""
             box-sizing: border-box !important;
         }
         
-        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child [data-testid="stPopover"] > button {
+        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] > div:last-child [data-testid="stPopover"] > button {
             background-color: #ffffff !important; /* Fond blanc */
             border: 1px solid #e5e5e5 !important; /* Bordure fine */
             color: #0d0d0d !important;
@@ -254,13 +254,13 @@ st.markdown("""
             font-weight: 600 !important;
             transition: background-color 0.15s ease, border-color 0.15s ease !important;
         }
-        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child [data-testid="stPopover"] > button:hover {
+        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] > div:last-child [data-testid="stPopover"] > button:hover {
             background-color: #f9f9f9 !important;
             border-color: #cbd5e1 !important;
         }
 
         /* Le conteneur du texte dans le bouton popover */
-        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button > div {
+        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button > div {
             display: flex !important;
             flex-direction: column !important;
             align-items: flex-start !important;
@@ -269,7 +269,7 @@ st.markdown("""
         }
 
         /* Modifier le texte principal du bouton */
-        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button p {
+        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button p {
             font-size: 0.85rem !important;
             font-weight: 600 !important;
             color: #0f172a !important;
@@ -278,7 +278,7 @@ st.markdown("""
         }
 
         /* Ajouter le sous-titre "Client connecté" via ::after sur le conteneur du texte */
-        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button > div::after {
+        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button > div::after {
             content: "Client connecté" !important;
             font-size: 0.72rem !important;
             color: #6b7280 !important;
@@ -287,7 +287,7 @@ st.markdown("""
         }
 
         /* Le chevron ▼ à droite du bouton popover */
-        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button::after {
+        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button::after {
             content: "▼" !important;
             font-size: 0.65rem !important;
             color: #94a3b8 !important;
@@ -296,7 +296,7 @@ st.markdown("""
         }
 
         /* Rotation du chevron quand ouvert */
-        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button[aria-expanded="true"]::after {
+        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button[aria-expanded="true"]::after {
             transform: rotate(180deg) !important;
         }
 
@@ -460,12 +460,14 @@ st.markdown("""
         }
 
         /* Compacité verticale globale de la sidebar */
-        [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] {
+        [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] {
             gap: 2px !important;
         }
 
-        /* ── Ligne complète (le stHorizontalBlock) dans la sidebar ── */
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] {
+        /* ── Ligne complète (le stHorizontalBlock ou div parent de colonne) dans la sidebar ── */
+        [data-testid="stSidebar"] div:has(> div[data-testid="column"]),
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"],
+        [data-testid="stSidebar"] .stHorizontalBlock {
             gap: 0 !important;
             align-items: center !important;
             padding: 0px 6px !important;
@@ -480,17 +482,23 @@ st.markdown("""
         }
 
         /* Hover sur toute la ligne OU ligne active */
+        [data-testid="stSidebar"] div:has(> div[data-testid="column"]):hover,
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:hover,
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(.active-session) {
+        [data-testid="stSidebar"] .stHorizontalBlock:hover,
+        [data-testid="stSidebar"] div:has(> div[data-testid="column"]):has(.active-session),
+        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(.active-session),
+        [data-testid="stSidebar"] .stHorizontalBlock:has(.active-session) {
             background-color: #ebe5e0 !important;
         }
 
-        /* Forcer absolument tout à l'intérieur des colonnes de la sidebar en transparent */
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] *,
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] [data-testid="column"],
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .element-container,
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton,
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] > div {
+        /* Forcer absolument toutes les colonnes et leurs sous-éléments de la sidebar en transparent */
+        [data-testid="stSidebar"] [data-testid="column"],
+        [data-testid="stSidebar"] [data-testid="column"] *,
+        [data-testid="stSidebar"] [data-testid="column"] > div,
+        [data-testid="stSidebar"] [data-testid="column"] .element-container,
+        [data-testid="stSidebar"] [data-testid="column"] .stButton,
+        [data-testid="stSidebar"] [data-testid="column"] .stButton > button,
+        [data-testid="stSidebar"] [data-testid="column"] div[data-testid="stPopover"] > button {
             background: transparent !important;
             background-color: transparent !important;
             border: none !important;
@@ -498,7 +506,7 @@ st.markdown("""
         }
 
         /* ── Bouton Titre de Discussion ── */
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button {
+        [data-testid="stSidebar"] [data-testid="column"] .stButton > button {
             background: transparent !important;
             background-color: transparent !important;
             border: none !important;
@@ -516,9 +524,9 @@ st.markdown("""
             justify-content: flex-start !important;
             text-align: left !important;
         }
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button:hover,
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button:focus,
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button:active {
+        [data-testid="stSidebar"] [data-testid="column"] .stButton > button:hover,
+        [data-testid="stSidebar"] [data-testid="column"] .stButton > button:focus,
+        [data-testid="stSidebar"] [data-testid="column"] .stButton > button:active {
             background: transparent !important;
             background-color: transparent !important;
             border: none !important;
@@ -526,8 +534,8 @@ st.markdown("""
         }
 
         /* Override des conteneurs internes du bouton Streamlit */
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button > div,
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button > div > div {
+        [data-testid="stSidebar"] [data-testid="column"] .stButton > button > div,
+        [data-testid="stSidebar"] [data-testid="column"] .stButton > button > div > div {
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
@@ -536,8 +544,8 @@ st.markdown("""
         }
 
         /* Ellipsis sur le texte du titre */
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button p,
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] .stButton > button span {
+        [data-testid="stSidebar"] [data-testid="column"] .stButton > button p,
+        [data-testid="stSidebar"] [data-testid="column"] .stButton > button span {
             white-space: nowrap !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
@@ -549,7 +557,7 @@ st.markdown("""
         /* ====== BOUTON MENU ⋮ ====== */
 
         /* Masqué par défaut (opacité 0), sans bordure, visible au survol */
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] div[data-testid="stPopover"] > button {
+        [data-testid="stSidebar"] [data-testid="column"] div[data-testid="stPopover"] > button {
             opacity: 0 !important;
             width: 28px !important;
             min-width: 28px !important;
@@ -568,20 +576,22 @@ st.markdown("""
         }
 
         /* Afficher au hover de la ligne OU quand le menu est ouvert */
+        [data-testid="stSidebar"] div:has(> div[data-testid="column"]):hover div[data-testid="stPopover"] > button,
         [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:hover div[data-testid="stPopover"] > button,
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] div[data-testid="stPopover"] > button[aria-expanded="true"] {
+        [data-testid="stSidebar"] .stHorizontalBlock:hover div[data-testid="stPopover"] > button,
+        [data-testid="stSidebar"] [data-testid="column"] div[data-testid="stPopover"] > button[aria-expanded="true"] {
             opacity: 1 !important;
         }
 
         /* Survol direct de l'icône ⋮ */
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] div[data-testid="stPopover"] > button:hover {
+        [data-testid="stSidebar"] [data-testid="column"] div[data-testid="stPopover"] > button:hover {
             color: #171717 !important;
             background: rgba(0, 0, 0, 0.08) !important;
             border-radius: 4px !important;
         }
 
         /* Cacher la flèche de chevron vers le bas par défaut de st.popover dans la sidebar */
-        [data-testid="stSidebar"] [data-testid="stHorizontalBlock"] div[data-testid="stPopover"] > button svg:nth-of-type(2) {
+        [data-testid="stSidebar"] [data-testid="column"] div[data-testid="stPopover"] > button svg:nth-of-type(2) {
             display: none !important;
         }
 
@@ -1369,7 +1379,7 @@ else:
         st.markdown(f"""
             <style>
                 /* Cible uniquement le dernier popover de la sidebar principale (profil), pas les colonnes */
-                [data-testid="stSidebarUserContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button::before {{
+                [data-testid="stSidebarContent"] > [data-testid="stVerticalBlock"] > div:last-child div[data-testid="stPopover"] > button::before {{
                     content: "{initials[0]}";
                     width: 32px;
                     height: 32px;
