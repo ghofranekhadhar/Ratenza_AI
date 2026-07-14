@@ -1855,11 +1855,17 @@ def get_aggregated_context(intents, full_context, commerce_name="la boutique"):
             sections.append(block)
 
         elif intent in ("Commande", "Livraison"):
-            relevant = extract_lines("transaction", "achat", "date", "montant")
+            # NE PAS injecter de délai générique ici — les vraies données de commande
+            # sont injectées séparément dans le bloc PRIORITÉ ABSOLUE du generate_chatbot_response.
+            # Ce bloc sert uniquement à indiquer au LLM qu'il a accès aux vraies données.
             block = "[Donnees Commande / Livraison (MongoDB)]\n"
-            block += "Délai standard : 3 a 5 jours ouvres.\n"
-            if relevant:
-                block += "Dernieres transactions connues :\n" + "\n".join(relevant[:3]) + "\n"
+            block += "Données de commande en temps réel disponibles (voir section PRIORITÉ ABSOLUE ci-dessous).\n"
+            block += (
+                "⚡ INSTRUCTION LLM : Utilise CES données réelles pour répondre. "
+                "NE DIS PAS 'je n\'ai pas accès à la base de données'. "
+                "NE donne PAS de délai générique (3-5 jours). "
+                "Calcule et cite les vraies dates et le vrai statut.\n"
+            )
             sections.append(block)
 
         elif intent == "Produits":
