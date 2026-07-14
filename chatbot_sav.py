@@ -1634,6 +1634,7 @@ else:
                     with st.spinner("L'assistant réfléchit..."):
                         # Récupérer l'historique complet pour nourrir la réponse
                         history = get_conversation(st.session_state.email, st.session_state.commerce_id, st.session_state.session_id)
+                    print(f"\n[SAV_UI_DEBUG] email={st.session_state.email!r}, commerce_id={st.session_state.commerce_id!r}, client_name={st.session_state.client_name!r}")
                     bot_reply, is_fallback = classifier.generate_chatbot_response(
                         st.session_state.client_name,
                         st.session_state.email,

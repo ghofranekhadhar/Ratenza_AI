@@ -39,6 +39,7 @@ def get_orders_by_email(email: str, commerce_id: str) -> list:
 
     Retourne une liste triée du plus récent au plus ancien.
     """
+    print(f"[DB_ORDERS_DEBUG] get_orders_by_email called with email={email!r}, commerce_id={commerce_id!r}")
     try:
         mongo_client = MongoClient(config.MONGO_URI, serverSelectionTimeoutMS=1500)
         db = mongo_client[config.DB_NAME]
@@ -50,6 +51,7 @@ def get_orders_by_email(email: str, commerce_id: str) -> list:
         cursor = db.commandes.find(query).sort("date_commande", -1)
         orders = list(cursor)
         mongo_client.close()
+        print(f"[DB_ORDERS_DEBUG] get_orders_by_email query={query} -> found {len(orders)} order(s)")
         return orders
     except Exception as e:
         print(f"[chatbot_orders] Erreur MongoDB get_orders_by_email : {e}")
@@ -65,16 +67,19 @@ def get_order_by_number(numero_commande: str, commerce_id: str, client_email: st
     même s'il connaît le numéro de commande.
     Retourne None si la commande n'appartient pas à ce client.
     """
+    print(f"[DB_ORDERS_DEBUG] get_order_by_number called with numero_commande={numero_commande!r}, commerce_id={commerce_id!r}, client_email={client_email!r}")
     try:
         mongo_client = MongoClient(config.MONGO_URI, serverSelectionTimeoutMS=1500)
         db = mongo_client[config.DB_NAME]
 
-        order = db.commandes.find_one({
+        query = {
             "numero_commande": numero_commande.strip(),
             "commerce_id": commerce_id.strip(),
             "client_email": {"$regex": f"^{client_email.strip()}$", "$options": "i"}
-        })
+        }
+        order = db.commandes.find_one(query)
         mongo_client.close()
+        print(f"[DB_ORDERS_DEBUG] get_order_by_number query={query} -> result found: {order is not None}")
         return order
     except Exception as e:
         print(f"[chatbot_orders] Erreur MongoDB get_order_by_number : {e}")

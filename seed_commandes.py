@@ -25,12 +25,12 @@ db = client[DB_NAME]
 # Supprimer les éventuelles commandes de test précédentes pour ce client
 deleted = db.commandes.delete_many({
     "client_email": "ghofrane.khadarr@gmail.com",
-    "commerce_id": "boutique_tunis"
+    "commerce_id": {"$in": ["boutique_tunis", "commerce_local_1"]}
 })
 print(f"[seed] {deleted.deleted_count} commande(s) de test précédente(s) supprimée(s).")
 
 # --- Commande 1 : LIVRÉE (historique) ---
-cmd1 = {
+cmd1_tunis = {
     "commerce_id":             "boutique_tunis",
     "client_email":            "ghofrane.khadarr@gmail.com",
     "numero_commande":         "CMD-2026-001",
@@ -47,7 +47,7 @@ cmd1 = {
 }
 
 # --- Commande 2 : EN LIVRAISON (commande active principale) ---
-cmd2 = {
+cmd2_tunis = {
     "commerce_id":             "boutique_tunis",
     "client_email":            "ghofrane.khadarr@gmail.com",
     "numero_commande":         "CMD-2026-002",
@@ -63,7 +63,7 @@ cmd2 = {
 }
 
 # --- Commande 3 : EN PRÉPARATION (très récente, commandée aujourd'hui) ---
-cmd3 = {
+cmd3_tunis = {
     "commerce_id":             "boutique_tunis",
     "client_email":            "ghofrane.khadarr@gmail.com",
     "numero_commande":         "CMD-2026-003",
@@ -78,8 +78,16 @@ cmd3 = {
     "adresse_livraison":       "12 Rue Ibn Khaldoun, Tunis 1001"
 }
 
-result = db.commandes.insert_many([cmd1, cmd2, cmd3])
-print(f"[seed] {len(result.inserted_ids)} commande(s) de test créée(s) avec succès.")
+# Dupliquer pour commerce_local_1 (fallback local dans Streamlit)
+cmd1_local = dict(cmd1_tunis, commerce_id="commerce_local_1")
+cmd2_local = dict(cmd2_tunis, commerce_id="commerce_local_1")
+cmd3_local = dict(cmd3_tunis, commerce_id="commerce_local_1")
+
+result = db.commandes.insert_many([
+    cmd1_tunis, cmd2_tunis, cmd3_tunis,
+    cmd1_local, cmd2_local, cmd3_local
+])
+print(f"[seed] {len(result.inserted_ids)} commande(s) de test créée(s) avec succès (pour boutique_tunis et commerce_local_1).")
 
 # Afficher un résumé
 print("\n=== COMMANDES CRÉÉES ===")

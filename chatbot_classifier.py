@@ -2042,6 +2042,7 @@ def generate_chatbot_response(client_name, client_email, commerce_name, conversa
     """
     Orchestre la reponse du chatbot en combinant detection locale, LLM, et mode fallback (offline).
     """
+    print(f"[CLASSIFIER_DEBUG] generate_chatbot_response called with client_name={client_name!r}, client_email={client_email!r}, commerce_name={commerce_name!r}, commerce_id={commerce_id!r}")
     # Détection et persistance en mémoire du mode de langue forcé pour cette session
     active_forced_lang = None
     if conversation_history:
