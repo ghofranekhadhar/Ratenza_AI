@@ -402,15 +402,15 @@ const runSmartAutomationInternal = async (commerceId) => {
         const brandId = commerceId.replace(/_\d+$/, ''); // ex: commerce_local_1 → commerce_local
         const settings = await db.collection('commerces_settings').findOne({ brand_id: brandId });
         if (settings && settings.cooldown_days !== undefined) {
-            cooldownDays = parseInt(settings.cooldown_days, 10) || 30;
+            cooldownDays = parseFloat(settings.cooldown_days) || 30;
         }
         console.log(`[SmartAutomation] Cooldown marque "${brandId}" : ${cooldownDays} jours`);
     } catch (err) {
         console.warn(`[SmartAutomation] Impossible de lire les paramètres de cooldown, défaut 30j:`, err.message);
     }
 
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - cooldownDays);
+    const cooldownMs = cooldownDays * 24 * 60 * 60 * 1000;
+    const thirtyDaysAgo = new Date(Date.now() - cooldownMs);
     
     // Récupérer les campagnes envoyées ces X derniers jours pour le cooldown anti-spam
     // EXCLUSION INTENTIONNELLE : birthday_gift et ambassador_invite ne comptent PAS dans ce cooldown
@@ -1046,7 +1046,7 @@ const updateCommerceSettings = async (req, res) => {
     const { commerce_id, cooldown_days } = req.body || {};
     const commerceId = commerce_id || COMMERCE_ID;
     const brandId = extractBrandId(commerceId);
-    const days = parseInt(cooldown_days, 10) || 30;
+    const days = parseFloat(cooldown_days) || 30;
 
     try {
         const db = await connectDB();

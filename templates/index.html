@@ -1542,6 +1542,7 @@
                             <option value="21">⏳ 3 semaines (21j)</option>
                             <option value="14">⏳ 2 semaines (14j)</option>
                             <option value="7">⏳ 1 semaine (7j)</option>
+                            <option value="0.00694">⏳ 10 minutes (Test)</option>
                         </select>
                     </div>
 
@@ -3856,7 +3857,7 @@
             const status = document.getElementById('settings-save-status');
             if (!select || !status) return;
 
-            const days = parseInt(select.value, 10);
+            const days = parseFloat(select.value);
             const targetId = currentCommerceId === '__all__' ? 'commerce_local' : currentCommerceId;
             
             try {
