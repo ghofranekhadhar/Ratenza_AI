@@ -63,6 +63,7 @@ const connectDB = require('./config/db');
 
 function startDailyScheduler() {
     const TARGET_HOUR = 9;
+    let isSchedulerRunning = false;
 
     function getMsUntilTarget() {
         const now = new Date();
@@ -77,10 +78,14 @@ function startDailyScheduler() {
     }
 
     async function executeCampaignsForAllCommerces() {
+        if (isSchedulerRunning) {
+            console.log(`⏰ [SCHEDULER] [WARNING] Exécution déjà en cours, saut de ce tick.`);
+            return;
+        }
+        isSchedulerRunning = true;
         console.log(`⏰ [SCHEDULER] Lancement automatique de la campagne IA à ${new Date().toLocaleString('fr-FR')}`);
         try {
             const db = await connectDB();
-            // Récupérer tous les commerces actifs dans le système
             const commerceIds = await db.collection('clients').distinct('commerce_id');
             console.log(`⏰ [SCHEDULER] Commerces détectés :`, commerceIds);
 
@@ -91,6 +96,8 @@ function startDailyScheduler() {
             }
         } catch (err) {
             console.error(`❌ [SCHEDULER] Erreur globale lors de l'exécution automatique :`, err.message);
+        } finally {
+            isSchedulerRunning = false;
         }
     }
 

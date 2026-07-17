@@ -1442,43 +1442,57 @@
             <div class="global-actions" style="display: flex; align-items: center; gap: 1rem;">
                 <!-- Notification Bell Container -->
                 <div class="notification-container" style="position: relative;">
-                    <button class="btn-icon" id="btn-notifications" onclick="toggleNotifications(event)" 
+                    <button class="btn-icon" id="btn-notifications" onclick="toggleNotifications(event)"
                         style="position: relative;">
                         <i data-lucide="bell" style="width: 20px; height: 20px;"></i>
                         <!-- Badge rouge = alertes churn -->
-                        <span id="notif-badge" style="display: none; position: absolute; top: -4px; right: -4px; background: var(--danger); color: white; border-radius: 50%; font-size: 0.58rem; font-weight: 700; width: 17px; height: 17px; display: flex; align-items: center; justify-content: center;">0</span>
+                        <span id="notif-badge"
+                            style="display: none; position: absolute; top: -4px; right: -4px; background: var(--danger); color: white; border-radius: 50%; font-size: 0.58rem; font-weight: 700; width: 17px; height: 17px; display: flex; align-items: center; justify-content: center;">0</span>
                         <!-- Badge doré = nouveaux ambassadeurs -->
-                        <span id="notif-ambassador-badge" style="display: none; position: absolute; bottom: -4px; right: -4px; background: linear-gradient(135deg,#eab308,#ca8a04); color: white; border-radius: 50%; font-size: 0.58rem; font-weight: 700; width: 17px; height: 17px; align-items: center; justify-content: center;">0</span>
+                        <span id="notif-ambassador-badge"
+                            style="display: none; position: absolute; bottom: -4px; right: -4px; background: linear-gradient(135deg,#eab308,#ca8a04); color: white; border-radius: 50%; font-size: 0.58rem; font-weight: 700; width: 17px; height: 17px; align-items: center; justify-content: center;">0</span>
                         <!-- Badge violet = clients bloqués SAV -->
-                        <span id="notif-chatbot-badge" style="display: none; position: absolute; top: -4px; left: -4px; background: #8b5cf6; color: white; border-radius: 50%; font-size: 0.58rem; font-weight: 700; width: 17px; height: 17px; display: flex; align-items: center; justify-content: center;">0</span>
+                        <span id="notif-chatbot-badge"
+                            style="display: none; position: absolute; top: -4px; left: -4px; background: #8b5cf6; color: white; border-radius: 50%; font-size: 0.58rem; font-weight: 700; width: 17px; height: 17px; display: flex; align-items: center; justify-content: center;">0</span>
                     </button>
                     <!-- Dropdown Panel avec 3 onglets -->
-                    <div id="notif-dropdown" style="display: none; position: absolute; top: 50px; right: 0; width: 380px; background: white; border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.12); z-index: 1000; padding: 1.2rem; max-height: 520px; overflow: hidden;">
+                    <div id="notif-dropdown"
+                        style="display: none; position: absolute; top: 50px; right: 0; width: 380px; background: white; border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.12); z-index: 1000; padding: 1.2rem; max-height: 520px; overflow: hidden;">
                         <!-- Onglets -->
-                        <div style="display:flex; gap:0.35rem; margin-bottom:0.85rem; border-bottom:1px solid var(--border-color); padding-bottom:0.75rem;">
-                            <button id="tab-churn" onclick="switchNotifTab('churn')" style="flex:1.1; padding:0.45rem 0.5rem; border-radius:10px; border:none; cursor:pointer; font-size:0.78rem; font-weight:700; background:var(--danger); color:white; display:flex; align-items:center; justify-content:center; gap:0.25rem; transition:all 0.2s; white-space:nowrap;">
+                        <div
+                            style="display:flex; gap:0.35rem; margin-bottom:0.85rem; border-bottom:1px solid var(--border-color); padding-bottom:0.75rem;">
+                            <button id="tab-churn" onclick="switchNotifTab('churn')"
+                                style="flex:1.1; padding:0.45rem 0.5rem; border-radius:10px; border:none; cursor:pointer; font-size:0.78rem; font-weight:700; background:var(--danger); color:white; display:flex; align-items:center; justify-content:center; gap:0.25rem; transition:all 0.2s; white-space:nowrap;">
                                 🔴 Churn
-                                <span id="notif-count" style="display:none; background:rgba(255,255,255,0.3); color:white; border-radius:20px; padding:1px 6px; font-size:0.7rem; font-weight:800; min-width:16px; text-align:center;">0</span>
+                                <span id="notif-count"
+                                    style="display:none; background:rgba(255,255,255,0.3); color:white; border-radius:20px; padding:1px 6px; font-size:0.7rem; font-weight:800; min-width:16px; text-align:center;">0</span>
                             </button>
-                            <button id="tab-ambassador" onclick="switchNotifTab('ambassador')" style="flex:1.3; padding:0.45rem 0.5rem; border-radius:10px; border:none; cursor:pointer; font-size:0.78rem; font-weight:700; background:rgba(234,179,8,0.12); color:#92400e; display:flex; align-items:center; justify-content:center; gap:0.25rem; transition:all 0.2s; white-space:nowrap;">
+                            <button id="tab-ambassador" onclick="switchNotifTab('ambassador')"
+                                style="flex:1.3; padding:0.45rem 0.5rem; border-radius:10px; border:none; cursor:pointer; font-size:0.78rem; font-weight:700; background:rgba(234,179,8,0.12); color:#92400e; display:flex; align-items:center; justify-content:center; gap:0.25rem; transition:all 0.2s; white-space:nowrap;">
                                 👑 Ambassadeurs
-                                <span id="ambassador-count" style="display:none; background:rgba(202,138,4,0.2); color:#92400e; border-radius:20px; padding:1px 6px; font-size:0.7rem; font-weight:800; min-width:16px; text-align:center;">0</span>
+                                <span id="ambassador-count"
+                                    style="display:none; background:rgba(202,138,4,0.2); color:#92400e; border-radius:20px; padding:1px 6px; font-size:0.7rem; font-weight:800; min-width:16px; text-align:center;">0</span>
                             </button>
-                            <button id="tab-chatbot" onclick="switchNotifTab('chatbot')" style="flex:1.2; padding:0.45rem 0.5rem; border-radius:10px; border:none; cursor:pointer; font-size:0.78rem; font-weight:700; background:rgba(139,92,246,0.12); color:#5b21b6; display:flex; align-items:center; justify-content:center; gap:0.25rem; transition:all 0.2s; white-space:nowrap;">
+                            <button id="tab-chatbot" onclick="switchNotifTab('chatbot')"
+                                style="flex:1.2; padding:0.45rem 0.5rem; border-radius:10px; border:none; cursor:pointer; font-size:0.78rem; font-weight:700; background:rgba(139,92,246,0.12); color:#5b21b6; display:flex; align-items:center; justify-content:center; gap:0.25rem; transition:all 0.2s; white-space:nowrap;">
                                 🚨 Blocs SAV
-                                <span id="chatbot-notif-count" style="display:none; background:rgba(139,92,246,0.2); color:#5b21b6; border-radius:20px; padding:1px 6px; font-size:0.7rem; font-weight:800; min-width:16px; text-align:center;">0</span>
+                                <span id="chatbot-notif-count"
+                                    style="display:none; background:rgba(139,92,246,0.2); color:#5b21b6; border-radius:20px; padding:1px 6px; font-size:0.7rem; font-weight:800; min-width:16px; text-align:center;">0</span>
                             </button>
                         </div>
                         <!-- Contenu Churn -->
-                        <div id="notif-list" style="display: flex; flex-direction: column; gap: 0.65rem; max-height: 350px; overflow-y: auto;">
+                        <div id="notif-list"
+                            style="display: flex; flex-direction: column; gap: 0.65rem; max-height: 350px; overflow-y: auto;">
                             <!-- Dynamic churn items -->
                         </div>
                         <!-- Contenu Ambassadeurs (caché par défaut) -->
-                        <div id="ambassador-list" style="display: none; flex-direction: column; gap: 0.65rem; max-height: 350px; overflow-y: auto;">
+                        <div id="ambassador-list"
+                            style="display: none; flex-direction: column; gap: 0.65rem; max-height: 350px; overflow-y: auto;">
                             <!-- Dynamic ambassador items -->
                         </div>
                         <!-- Contenu Chatbot Alerts (caché par défaut) -->
-                        <div id="chatbot-list" style="display: none; flex-direction: column; gap: 0.65rem; max-height: 350px; overflow-y: auto;">
+                        <div id="chatbot-list"
+                            style="display: none; flex-direction: column; gap: 0.65rem; max-height: 350px; overflow-y: auto;">
                             <!-- Dynamic blocked client items -->
                         </div>
                     </div>
@@ -1523,8 +1537,10 @@
                 <div style="display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;">
                     <!-- Filtre Boutique dans Stats -->
                     <div style="display: flex; flex-direction: column; gap: 0.3rem;">
-                        <span style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Boutique</span>
-                        <select id="stats-commerce-selector" class="commerce-select" onchange="handleStatsCommerceChange()"
+                        <span
+                            style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Boutique</span>
+                        <select id="stats-commerce-selector" class="commerce-select"
+                            onchange="handleStatsCommerceChange()"
                             style="padding: 0.42rem 2.2rem 0.42rem 0.85rem; font-size: 0.82rem; border-radius: 9px; flex-shrink: 0; min-width: 170px; border-color: var(--border-color); box-shadow: none;">
                             <option value="__all__"> Toutes les boutiques</option>
                         </select>
@@ -1532,17 +1548,20 @@
 
                     <!-- Cooldown Relance Automatique (Marque) -->
                     <div style="display: flex; flex-direction: column; gap: 0.3rem;">
-                        <span style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.35rem;">
+                        <span
+                            style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.35rem;">
                             Relance Automatique
-                            <span id="settings-save-status" style="font-size: 0.65rem; color: var(--success); font-weight: 700; display: none; text-transform: none; letter-spacing: normal;">✓ Enregistré !</span>
+                            <span id="settings-save-status"
+                                style="font-size: 0.65rem; color: var(--success); font-weight: 700; display: none; text-transform: none; letter-spacing: normal;">✓
+                                Enregistré !</span>
                         </span>
-                        <select id="setting-cooldown-days" onchange="saveCommerceSettings()" class="commerce-select" 
+                        <select id="setting-cooldown-days" onchange="saveCommerceSettings()" class="commerce-select"
                             style="padding: 0.42rem 2.2rem 0.42rem 0.85rem; font-size: 0.82rem; border-radius: 9px; border-color: var(--border-color); font-weight: 600; min-width: 170px; background-color: #fafbfc; box-shadow: none;">
                             <option value="30">⏳ 30 jours (Standard)</option>
                             <option value="21">⏳ 3 semaines (21j)</option>
                             <option value="14">⏳ 2 semaines (14j)</option>
                             <option value="7">⏳ 1 semaine (7j)</option>
-                            <option value="0.00694">⏳ 10 minutes (Test)</option>
+                            <option value="0.00694">⏳ 5 minutes</option>
                         </select>
                     </div>
 
@@ -1555,14 +1574,19 @@
 
             <!-- Conteneur des Suggestions & Recommandations IA -->
             <div id="ai-recommendations-container" style="display: none; margin-bottom: 1.5rem; margin-top: 1rem;">
-                <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.04) 0%, rgba(139, 92, 246, 0.04) 100%); border: 1px solid rgba(99, 102, 241, 0.12); border-radius: 16px; padding: 1.25rem;">
+                <div
+                    style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.04) 0%, rgba(139, 92, 246, 0.04) 100%); border: 1px solid rgba(99, 102, 241, 0.12); border-radius: 16px; padding: 1.25rem;">
                     <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.85rem;">
-                        <div style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: rgba(99, 102, 241, 0.12); color: #6366f1; border-radius: 50%;">
+                        <div
+                            style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: rgba(99, 102, 241, 0.12); color: #6366f1; border-radius: 50%;">
                             <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
                         </div>
-                        <h4 style="font-size: 0.95rem; font-weight: 700; color: #1e1b4b; margin: 0; font-family: 'Outfit', sans-serif;">💡 Suggestions &amp; Recommandations IA</h4>
+                        <h4
+                            style="font-size: 0.95rem; font-weight: 700; color: #1e1b4b; margin: 0; font-family: 'Outfit', sans-serif;">
+                            💡 Suggestions &amp; Recommandations IA</h4>
                     </div>
-                    <div id="ai-recommendations-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+                    <div id="ai-recommendations-list"
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
                         <!-- Inséré dynamiquement -->
                     </div>
                 </div>
@@ -1627,7 +1651,8 @@
             </div>
 
             <!-- KPI Row 2 : Risque Churn & Ambassadeurs -->
-            <div class="kpi-section-label" style="--kpi-label-color: #ef4444;">Risque de Churn & Programme Ambassadeurs</div>
+            <div class="kpi-section-label" style="--kpi-label-color: #ef4444;">Risque de Churn & Programme Ambassadeurs
+            </div>
             <div class="kpi-grid"
                 style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-bottom: 2.5rem;">
                 <div class="kpi-card kpi-danger">
@@ -1656,7 +1681,8 @@
                     </div>
                 </div>
 
-                <div class="kpi-card kpi-amber" style="background: linear-gradient(135deg, rgba(254, 240, 138, 0.15) 0%, rgba(234, 179, 8, 0.15) 100%); border-color: rgba(234, 179, 8, 0.3);">
+                <div class="kpi-card kpi-amber"
+                    style="background: linear-gradient(135deg, rgba(254, 240, 138, 0.15) 0%, rgba(234, 179, 8, 0.15) 100%); border-color: rgba(234, 179, 8, 0.3);">
                     <div class="kpi-header">
                         <h3 class="kpi-title" style="color: #854d0e;">Ambassadeurs Officiels</h3>
                         <div class="kpi-icon" style="background: rgba(234, 179, 8, 0.2); color: #ca8a04;">
@@ -1777,13 +1803,14 @@
                 <!-- ── LIGNE 1 : Barre de recherche pleine largeur ── -->
                 <div style="padding: 0.85rem 1.25rem; border-bottom: 1px solid #e2e8f0;">
                     <div class="search-container" style="position: relative; width: 100%;">
-                        <svg class="search-icon" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
-                            viewBox="0 0 24 24" style="position:absolute; left:1rem; top:50%; transform:translateY(-50%); color:var(--text-secondary); pointer-events:none;">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        <svg class="search-icon" width="17" height="17" fill="none" stroke="currentColor"
+                            stroke-width="2" viewBox="0 0 24 24"
+                            style="position:absolute; left:1rem; top:50%; transform:translateY(-50%); color:var(--text-secondary); pointer-events:none;">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
                         <input type="text" class="search-input" id="search-input"
-                            placeholder="🔍  Rechercher par nom ou email..."
-                            oninput="handleFilterAndSearch()"
+                            placeholder="🔍  Rechercher par nom ou email..." oninput="handleFilterAndSearch()"
                             style="width: 100%; padding: 0.65rem 1rem 0.65rem 2.7rem; border-radius: 10px; border: 1px solid var(--border-color); background: #f8fafc; font-size: 0.92rem; box-sizing: border-box;">
                     </div>
                 </div>
@@ -1840,12 +1867,14 @@
                     </select>
 
                     <!-- Ambassadeurs -->
-                    <button id="ambassador-filter-btn" onclick="toggleAmbassadorFilter()" style="display:flex; align-items:center; gap:4px; padding:0.42rem 0.7rem; border-radius:9px; font-weight:700; background:#fff; border:1px solid var(--border-color); color:#ca8a04; cursor:pointer; transition:all 0.2s; white-space:nowrap; font-family:'Outfit',sans-serif; font-size:0.82rem; flex-shrink:0;">
+                    <button id="ambassador-filter-btn" onclick="toggleAmbassadorFilter()"
+                        style="display:flex; align-items:center; gap:4px; padding:0.42rem 0.7rem; border-radius:9px; font-weight:700; background:#fff; border:1px solid var(--border-color); color:#ca8a04; cursor:pointer; transition:all 0.2s; white-space:nowrap; font-family:'Outfit',sans-serif; font-size:0.82rem; flex-shrink:0;">
                         👑 Ambassadeurs
                     </button>
 
                     <!-- Baisse Fréquence -->
-                    <button id="baisse-filter-btn" onclick="toggleBaisseFilter()" style="display:flex; align-items:center; gap:4px; padding:0.42rem 0.7rem; border-radius:9px; font-weight:700; background:#fff; border:1px solid var(--border-color); color:#dc2626; cursor:pointer; transition:all 0.2s; white-space:nowrap; font-family:'Outfit',sans-serif; font-size:0.82rem; flex-shrink:0;">
+                    <button id="baisse-filter-btn" onclick="toggleBaisseFilter()"
+                        style="display:flex; align-items:center; gap:4px; padding:0.42rem 0.7rem; border-radius:9px; font-weight:700; background:#fff; border:1px solid var(--border-color); color:#dc2626; cursor:pointer; transition:all 0.2s; white-space:nowrap; font-family:'Outfit',sans-serif; font-size:0.82rem; flex-shrink:0;">
                         📉 Baisse fréquence
                     </button>
 
@@ -1853,7 +1882,8 @@
                     <div style="width: 1px; height: 24px; background: #e2e8f0; flex-shrink: 0;"></div>
 
                     <!-- Compteur -->
-                    <div style="display:flex; align-items:center; gap:0.3rem; font-size:0.82rem; font-weight:700; background:#f1f5f9; border:1px solid var(--border-color); padding:0.42rem 0.8rem; border-radius:9px; white-space:nowrap; flex-shrink:0;">
+                    <div
+                        style="display:flex; align-items:center; gap:0.3rem; font-size:0.82rem; font-weight:700; background:#f1f5f9; border:1px solid var(--border-color); padding:0.42rem 0.8rem; border-radius:9px; white-space:nowrap; flex-shrink:0;">
                         <span id="filtered-count" style="color:var(--primary); font-weight:800;">0</span>
                         <span style="color:#cbd5e1;">/</span>
                         <span id="total-count" style="color:var(--text-secondary);">0</span>
@@ -1909,7 +1939,9 @@
             <div class="drawer-title-container">
                 <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                     <h2 id="drawer-client-name" style="margin:0;">Nom du Client</h2>
-                    <span id="drawer-client-rgpd-badge" style="display: none; background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; font-size: 0.68rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 6px; font-family: 'Outfit', sans-serif; white-space: nowrap;">🛡️ Désabonné (RGPD)</span>
+                    <span id="drawer-client-rgpd-badge"
+                        style="display: none; background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; font-size: 0.68rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 6px; font-family: 'Outfit', sans-serif; white-space: nowrap;">🛡️
+                        Désabonné (RGPD)</span>
                 </div>
                 <p id="drawer-client-email">email@exemple.com</p>
             </div>
@@ -1986,7 +2018,8 @@
                     <option value="ai">🤖 Automatisations IA</option>
                 </select>
             </div>
-            <div id="drawer-campaign-history-container" style="max-height: 180px; overflow-y: auto; padding-right: 4px; display: flex; flex-direction: column; gap: 0.5rem;">
+            <div id="drawer-campaign-history-container"
+                style="max-height: 180px; overflow-y: auto; padding-right: 4px; display: flex; flex-direction: column; gap: 0.5rem;">
                 <!-- Chargé dynamiquement -->
             </div>
 
@@ -2643,7 +2676,7 @@
 
                 // Calculer le score d'influence pour le badge ambassadeur
                 const scoreInfluence = client.influence_score !== undefined ? client.influence_score : Math.round(((client.score_global_sa || 0) * 0.7 + (1.0 - (client.churn_score || 0)) * 0.3) * 100);
-                const ambassadeurBadge = scoreInfluence >= 80 ? 
+                const ambassadeurBadge = scoreInfluence >= 80 ?
                     `<span class="ambassadeur-badge" style="background: linear-gradient(135deg, #eab308, #ca8a04); color: white; padding: 2px 6px; border-radius: 6px; font-size: 0.65rem; font-weight: 700; margin-left: 0.5rem; display: inline-flex; align-items: center; gap: 2px; vertical-align: middle; box-shadow: 0 2px 6px rgba(202,138,4,0.25);">👑 Ambassadeur</span>` : '';
 
                 // Badge baisse de fréquence (Option A)
@@ -3832,7 +3865,7 @@
                     lucide.createIcons();
                     showToast('Erreur réseau.', 'error');
                 });
-         }
+        }
 
         async function fetchCommerceSettings(commerceId) {
             const select = document.getElementById('setting-cooldown-days');
@@ -3859,7 +3892,7 @@
 
             const days = parseFloat(select.value);
             const targetId = currentCommerceId === '__all__' ? 'commerce_local' : currentCommerceId;
-            
+
             try {
                 const res = await fetch('/api/commerces/settings', {
                     method: 'POST',
@@ -3905,7 +3938,7 @@
                         let colorBorder = '#bfdbfe';
                         let colorBg = '#eff6ff';
                         let badgeColor = '#3b82f6';
-                        
+
                         if (rec.type === 'warning') {
                             colorBorder = '#fbcfe8';
                             colorBg = '#fdf2f8';
@@ -3948,14 +3981,14 @@
 
         function applyRecommendationAction(label, filtersStr) {
             const filters = JSON.parse(filtersStr);
-            
+
             // 1. Basculer vers la vue Clients
             switchView('clients');
 
             // 2. Réinitialiser les filtres à l'écran
             document.getElementById('search-input').value = '';
             document.getElementById('churn-filter').value = 'all';
-            
+
             // Décocher/désactiver les filtres Ambassadeur et Baisse de fréquence par défaut
             if (onlyAmbassadors) toggleAmbassadorFilter();
             if (onlyBaisse) toggleBaisseFilter();
@@ -3996,58 +4029,58 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ commerce_id: currentCommerceId })
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'busy') {
-                    showToast('⏳ ' + data.message, 'warning');
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'busy') {
+                        showToast('⏳ ' + data.message, 'warning');
+                        btn.disabled = false;
+                        btn.innerHTML = `<i data-lucide="sparkles" style="width:16px;height:16px;"></i> Automatisation IA`;
+                        lucide.createIcons();
+                        return;
+                    }
+
+                    // Status 'started' → l'automatisation tourne en arrière-plan
+                    // Démarrer un polling toutes les 3 secondes
+                    let elapsed = 0;
+                    if (_autoPollingInterval) clearInterval(_autoPollingInterval);
+                    _autoPollingInterval = setInterval(async () => {
+                        elapsed += 3;
+                        btn.innerHTML = `<div class="spinner" style="width:16px;height:16px;border-width:2px; border-color:#fff transparent transparent transparent;"></div> IA en cours... (${elapsed}s)`;
+                        try {
+                            const sr = await fetch('/api/campaigns/automation-status');
+                            const sd = await sr.json();
+                            if (!sd.running) {
+                                clearInterval(_autoPollingInterval);
+                                btn.disabled = false;
+                                btn.innerHTML = `<i data-lucide="sparkles" style="width:16px;height:16px;"></i> Automatisation IA`;
+                                lucide.createIcons();
+                                if (sd.result && sd.result.status === 'success') {
+                                    const s = sd.result.stats || {};
+                                    showToast(sd.result.message, 'success');
+                                    setTimeout(() => alert(
+                                        sd.result.message +
+                                        '\n\nAnniversaires: ' + (s.birthday_gift || 0) +
+                                        ' | VIP Sauvés: ' + (s.vip_danger || 0) +
+                                        ' | VIP pur: ' + (s.vip || 0) +
+                                        ' | Risque: ' + (s.at_risk || 0) +
+                                        ' | Réguliers: ' + (s.regular || 0) +
+                                        ' | Perdus: ' + (s.lost || 0) +
+                                        ' | Cooldown ignorés: ' + (s.skipped_cooldown || 0)
+                                    ), 400);
+                                } else if (sd.error) {
+                                    showToast('❌ Erreur automatisation : ' + sd.error, 'error');
+                                }
+                            }
+                        } catch (e) { /* réseau momentanément indisponible */ }
+                    }, 3000);
+                })
+                .catch(err => {
+                    console.error(err);
                     btn.disabled = false;
                     btn.innerHTML = `<i data-lucide="sparkles" style="width:16px;height:16px;"></i> Automatisation IA`;
                     lucide.createIcons();
-                    return;
-                }
-
-                // Status 'started' → l'automatisation tourne en arrière-plan
-                // Démarrer un polling toutes les 3 secondes
-                let elapsed = 0;
-                if (_autoPollingInterval) clearInterval(_autoPollingInterval);
-                _autoPollingInterval = setInterval(async () => {
-                    elapsed += 3;
-                    btn.innerHTML = `<div class="spinner" style="width:16px;height:16px;border-width:2px; border-color:#fff transparent transparent transparent;"></div> IA en cours... (${elapsed}s)`;
-                    try {
-                        const sr = await fetch('/api/campaigns/automation-status');
-                        const sd = await sr.json();
-                        if (!sd.running) {
-                            clearInterval(_autoPollingInterval);
-                            btn.disabled = false;
-                            btn.innerHTML = `<i data-lucide="sparkles" style="width:16px;height:16px;"></i> Automatisation IA`;
-                            lucide.createIcons();
-                            if (sd.result && sd.result.status === 'success') {
-                                const s = sd.result.stats || {};
-                                showToast(sd.result.message, 'success');
-                                setTimeout(() => alert(
-                                    sd.result.message +
-                                    '\n\nAnniversaires: ' + (s.birthday_gift||0) +
-                                    ' | VIP Sauvés: ' + (s.vip_danger||0) +
-                                    ' | VIP pur: ' + (s.vip||0) +
-                                    ' | Risque: ' + (s.at_risk||0) +
-                                    ' | Réguliers: ' + (s.regular||0) +
-                                    ' | Perdus: ' + (s.lost||0) +
-                                    ' | Cooldown ignorés: ' + (s.skipped_cooldown||0)
-                                ), 400);
-                            } else if (sd.error) {
-                                showToast('❌ Erreur automatisation : ' + sd.error, 'error');
-                            }
-                        }
-                    } catch(e) { /* réseau momentanément indisponible */ }
-                }, 3000);
-            })
-            .catch(err => {
-                console.error(err);
-                btn.disabled = false;
-                btn.innerHTML = `<i data-lucide="sparkles" style="width:16px;height:16px;"></i> Automatisation IA`;
-                lucide.createIcons();
-                showToast('Erreur réseau.', 'error');
-            });
+                    showToast('Erreur réseau.', 'error');
+                });
         }
 
         // ============================================================
@@ -4142,10 +4175,10 @@
                     return {
                         label: s.label,
                         data: [
-                            s.ca_total / 1000, 
-                            s.score_sa_moyen_pct, 
-                            s.churn_moyen_pct, 
-                            s.panier_moyen, 
+                            s.ca_total / 1000,
+                            s.score_sa_moyen_pct,
+                            s.churn_moyen_pct,
+                            s.panier_moyen,
                             s.ambassador_count || 0,
                             s.taux_retour_pct || 0,
                             s.baisse_freq_count || 0,
@@ -4266,7 +4299,7 @@
                     viewedAlertIds.add(id);
                     // Sauvegarder dans localStorage
                     localStorage.setItem('viewedAlertIds', JSON.stringify(Array.from(viewedAlertIds)));
-                    
+
                     // Réduire le badge
                     const unread = _lastAlerts.filter(a => !viewedAlertIds.has(a.client_db_id || a.email)).length;
                     const notifBadge = document.getElementById('notif-badge');
@@ -4280,7 +4313,7 @@
                     item.style.opacity = '0.45';
                     item.style.background = 'white';
                     item.style.border = '1px solid transparent';
-                    
+
                     // Mettre à jour le compteur non lus dans l'onglet
                     const notifCount = document.getElementById('notif-count');
                     if (notifCount) {
@@ -4388,16 +4421,16 @@
             const churnList = document.getElementById('notif-list');
             const ambassadorList = document.getElementById('ambassador-list');
             const chatbotList = document.getElementById('chatbot-list');
-            
+
             const tabChurn = document.getElementById('tab-churn');
             const tabAmbassador = document.getElementById('tab-ambassador');
             const tabChatbot = document.getElementById('tab-chatbot');
-            
+
             // Masquer tout
             if (churnList) churnList.style.display = 'none';
             if (ambassadorList) ambassadorList.style.display = 'none';
             if (chatbotList) chatbotList.style.display = 'none';
-            
+
             // Réinitialiser les styles des boutons d'onglet
             if (tabChurn) {
                 tabChurn.style.background = 'rgba(239,68,68,0.1)';
@@ -4411,7 +4444,7 @@
                 tabChatbot.style.background = 'rgba(139,92,246,0.12)';
                 tabChatbot.style.color = '#5b21b6';
             }
-            
+
             if (tab === 'churn') {
                 if (churnList) churnList.style.display = 'flex';
                 if (tabChurn) {
@@ -4445,7 +4478,7 @@
             const scoreInfluence = client.influence_score !== undefined
                 ? client.influence_score
                 : Math.round(((client.score_global_sa || 0) * 0.7 + (1.0 - (client.churn_score || 0)) * 0.3) * 100);
-            const refCode = client.referral_code || `REF-${(client.nom || 'CLIENT').toUpperCase().replace(/\s+/g, '-').substring(0,8)}-PARRAIN`;
+            const refCode = client.referral_code || `REF-${(client.nom || 'CLIENT').toUpperCase().replace(/\s+/g, '-').substring(0, 8)}-PARRAIN`;
 
             let storeLabel = 'Boutique';
             if (client.commerce_id === 'commerce_local_1' || client.commerce_id === 'commerce_local') storeLabel = 'Tunis';
@@ -4488,17 +4521,17 @@
                     viewedAmbassadorIds.add(id);
                     localStorage.setItem('viewedAmbassadorIds', JSON.stringify(Array.from(viewedAmbassadorIds)));
                     const unread = _lastAmbassadors.filter(a => !viewedAmbassadorIds.has(a.client_db_id || a.email)).length;
-                    
+
                     const badge = document.getElementById('notif-ambassador-badge');
                     if (unread > 0) { badge.innerText = unread; badge.style.display = 'flex'; }
                     else badge.style.display = 'none';
-                    
+
                     const countEl = document.getElementById('ambassador-count');
                     if (countEl) {
                         if (unread > 0) { countEl.innerText = unread; countEl.style.display = 'inline-block'; }
                         else countEl.style.display = 'none';
                     }
-                    
+
                     item.style.opacity = '0.45';
                     item.style.background = 'white';
                     item.style.border = '1px solid transparent';
@@ -4578,7 +4611,7 @@
                 if (result.status === 'success') {
                     _lastBlockedClients = result.data || [];
                     const total = _lastBlockedClients.length;
-                    
+
                     // Mettre à jour le badge violet sur la cloche
                     const badge = document.getElementById('notif-chatbot-badge');
                     if (badge) {
@@ -4614,14 +4647,14 @@
         async function loadChatbotBlocks() {
             const listEl = document.getElementById('chatbot-list');
             if (!listEl) return;
-            
+
             listEl.innerHTML = `
                 <div style="display:flex; align-items:center; justify-content:center; padding:1.5rem; gap:0.5rem; color:var(--text-secondary);">
                     <div class="spinner" style="width: 16px; height: 16px; border-width: 2px;"></div>
                     <span style="font-size: 0.8rem;">Chargement des blocs...</span>
                 </div>
             `;
-            
+
             try {
                 const res = await fetch(`/api/chatbot/blocks?commerce_id=${encodeURIComponent(currentCommerceId)}`);
                 const result = await res.json();
@@ -4637,10 +4670,10 @@
         function renderChatbotList() {
             const listEl = document.getElementById('chatbot-list');
             if (!listEl) return;
-            
+
             listEl.innerHTML = '';
             const total = _lastBlockedClients.length;
-            
+
             if (total === 0) {
                 listEl.innerHTML = `
                     <div style="text-align:center; padding:1.5rem; color:var(--text-secondary); font-size:0.82rem;">
@@ -4651,13 +4684,13 @@
                 lucide.createIcons();
                 return;
             }
-            
+
             _lastBlockedClients.forEach(c => {
                 const item = document.createElement('div');
                 item.style.cssText = 'background:#f8fafc; border:1px solid var(--border-color); border-radius:12px; padding:0.75rem; display:flex; flex-direction:column; gap:0.5rem; transition: all 0.2s;';
-                
+
                 const blockedDate = c.blocked_at ? new Date(c.blocked_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : 'Date inconnue';
-                
+
                 item.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                         <div style="max-width:70%;">
@@ -4687,7 +4720,7 @@
                 `;
                 listEl.appendChild(item);
             });
-            
+
             lucide.createIcons();
         }
 
@@ -4695,7 +4728,7 @@
             if (!confirm(`Voulez-vous vraiment débloquer l'accès pour le client ${email} ?`)) {
                 return;
             }
-            
+
             try {
                 const res = await fetch('/api/chatbot/unblock', {
                     method: 'POST',
@@ -4703,7 +4736,7 @@
                     body: JSON.stringify({ email, commerce_id: commerceId })
                 });
                 const result = await res.json();
-                
+
                 if (result.status === 'success') {
                     showToast(result.message, 'success');
                     closeChatbotModal();
@@ -4724,9 +4757,9 @@
             const subtitleEl = document.getElementById('chatbot-modal-subtitle');
             const bodyEl = document.getElementById('chatbot-modal-body');
             const unblockBtn = document.getElementById('chatbot-modal-unblock-btn');
-            
+
             if (!modal || !bodyEl) return;
-            
+
             // Ouvrir la modale et afficher un spinner de chargement
             titleEl.innerText = `Discussion de ${nom}`;
             subtitleEl.innerText = `Email: ${email} | Boutique: ${commerceId}`;
@@ -4736,38 +4769,38 @@
                     <span>Chargement de la conversation...</span>
                 </div>
             `;
-            
+
             // Attacher l'action au bouton débloquer de la modale
             unblockBtn.onclick = () => unblockChatbotClient(email, commerceId);
-            
+
             modal.style.display = 'flex';
-            
+
             try {
                 const res = await fetch(`/api/chatbot/conversation/${encodeURIComponent(email)}?commerce_id=${encodeURIComponent(commerceId)}`);
                 const result = await res.json();
-                
+
                 if (result.status === 'success' && result.data) {
                     const messages = result.data;
                     bodyEl.innerHTML = '';
-                    
+
                     if (messages.length === 0) {
                         bodyEl.innerHTML = `<div style="text-align:center; padding:2rem; color:var(--text-secondary); font-size:0.85rem;">Aucun message enregistré.</div>`;
                         return;
                     }
-                    
+
                     messages.forEach(msg => {
                         const isUser = msg.role === 'user';
                         const text = msg.text;
                         const cat = msg.category || 'NORMAL';
                         const sev = msg.severity || 'LOW';
-                        
+
                         const msgBox = document.createElement('div');
-                        
+
                         // Déterminer les couleurs de bulle
                         let bubbleStyle = 'padding: 10px 14px; border-radius: 12px; font-size: 0.85rem; max-width: 80%; line-height: 1.4;';
                         let alignStyle = '';
                         let metaHtml = '';
-                        
+
                         if (isUser) {
                             alignStyle = 'align-self: flex-end;';
                             if (['IMPOLI', 'INSULTE', 'MENACE', 'HAINE'].includes(cat)) {
@@ -4788,7 +4821,7 @@
                                 bubbleStyle += ' background: #fefcbf; color: #744210; border: 1px solid #fef08a; border-bottom-left-radius: 2px;';
                             }
                         }
-                        
+
                         msgBox.style.cssText = `${alignStyle} display: flex; flex-direction: column; width: 100%; max-width: 80%;`;
                         msgBox.innerHTML = `
                             <div style="${bubbleStyle}">${text}</div>
@@ -4796,7 +4829,7 @@
                         `;
                         bodyEl.appendChild(msgBox);
                     });
-                    
+
                     // Faire défiler vers le bas
                     setTimeout(() => { bodyEl.scrollTop = bodyEl.scrollHeight; }, 10);
                 } else {
@@ -4818,8 +4851,8 @@
         // ============================================================
         async function fetchReturnRate(commerceId) {
             const cardEl = document.getElementById('kpi-return-rate-card');
-            const valEl  = document.getElementById('kpi-return-rate');
-            const subEl  = document.getElementById('kpi-return-rate-subtext');
+            const valEl = document.getElementById('kpi-return-rate');
+            const subEl = document.getElementById('kpi-return-rate-subtext');
             if (!valEl) return;
 
             // Affichage « chargement »
@@ -4895,7 +4928,7 @@
         // Option A — Points de fidélité (Drawer)
         // ============================================================
         async function loadClientLoyaltyDetail(email, commerceId) {
-            const titleEl     = document.getElementById('drawer-loyalty-title');
+            const titleEl = document.getElementById('drawer-loyalty-title');
             const containerEl = document.getElementById('drawer-loyalty-container');
             if (!containerEl || !titleEl) return;
 
@@ -4929,15 +4962,15 @@
                     return;
                 }
 
-                const cumules     = data.points_cumules    || 0;
+                const cumules = data.points_cumules || 0;
                 const disponibles = data.points_disponibles || 0;
-                const utilises    = data.points_utilises   || 0;
+                const utilises = data.points_utilises || 0;
 
                 // Paliers depuis l'API : [{ code, points_requis, debloque, notifie }]
                 const apiPaliers = data.paliers || [];
                 const paliersMeta = {
-                    'FID10':  { color: '#10b981', icon: '🥉', label: '-10% sur votre prochain achat' },
-                    'FID20':  { color: '#3b82f6', icon: '🥈', label: '-20% sur votre prochain achat' },
+                    'FID10': { color: '#10b981', icon: '🥉', label: '-10% sur votre prochain achat' },
+                    'FID20': { color: '#3b82f6', icon: '🥈', label: '-20% sur votre prochain achat' },
                     'FIDVIP': { color: '#7c3aed', icon: '💎', label: 'Statut VIP + avantages exclusifs' }
                 };
 
@@ -5103,21 +5136,21 @@
                             <label style="font-weight:600; font-size:0.82rem; color:var(--text-secondary); display:block; margin-bottom:0.35rem;">Filleuls parrainés (${data.referred_clients.length}) :</label>
                             <div style="display:flex; flex-direction:column; gap:0.4rem; max-height:120px; overflow-y:auto; padding-right:4px;">
                                 ${data.referred_clients.map(c => {
-                                    const isDone = c.status === 'completed';
-                                    return `
+                        const isDone = c.status === 'completed';
+                        return `
                                         <div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; border:1px solid var(--border-color); padding:0.45rem 0.65rem; border-radius:6px; font-size:0.78rem;">
                                             <div style="display:flex; flex-direction:column; max-width:65%;">
                                                 <span style="font-weight:600; color:var(--text-primary); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${c.filleul_nom}</span>
                                                 <span style="font-size:0.7rem; color:var(--text-secondary); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${c.filleul_email}</span>
                                             </div>
                                             <div style="display:flex; align-items:center; gap:0.4rem;">
-                                                ${isDone 
-                                                    ? `<span style="color:var(--success); font-weight:700; background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:4px; font-size:0.7rem;">+${c.amount_generated.toFixed(0)} DT</span>` 
-                                                    : `<span style="color:var(--text-secondary); font-weight:600; background:#f1f5f9; padding:2px 6px; border-radius:4px; font-size:0.7rem;">Invité</span>`}
+                                                ${isDone
+                                ? `<span style="color:var(--success); font-weight:700; background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:4px; font-size:0.7rem;">+${c.amount_generated.toFixed(0)} DT</span>`
+                                : `<span style="color:var(--text-secondary); font-weight:600; background:#f1f5f9; padding:2px 6px; border-radius:4px; font-size:0.7rem;">Invité</span>`}
                                             </div>
                                         </div>
                                     `;
-                                }).join('')}
+                    }).join('')}
                             </div>
                         </div>
                     `;
@@ -5139,9 +5172,9 @@
                                             <div style="font-size:0.68rem; color:var(--text-secondary); font-weight:500;">Parrainages requis: ${t.required} complété${t.required > 1 ? 's' : ''}</div>
                                         </div>
                                     </div>
-                                    ${t.unlocked 
-                                        ? `<span style="font-family:monospace; font-size:0.75rem; font-weight:700; color:var(--success); background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:4px; border:1px solid rgba(16,185,129,0.15);">${t.code}</span>` 
-                                        : `<span style="font-size:0.68rem; font-weight:600; color:var(--text-secondary); background:#f1f5f9; padding:2px 6px; border-radius:4px;">Bloqué</span>`}
+                                    ${t.unlocked
+                        ? `<span style="font-family:monospace; font-size:0.75rem; font-weight:700; color:var(--success); background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:4px; border:1px solid rgba(16,185,129,0.15);">${t.code}</span>`
+                        : `<span style="font-size:0.68rem; font-weight:600; color:var(--text-secondary); background:#f1f5f9; padding:2px 6px; border-radius:4px;">Bloqué</span>`}
                                 </div>
                             `).join('')}
                         </div>
@@ -5273,37 +5306,37 @@
                     amount: amount
                 })
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.error) {
-                    showToast(data.error, 'error');
-                } else {
-                    showToast(data.message, 'success');
-                    // Réinitialiser les champs
-                    if (nomInput) nomInput.value = '';
-                    if (emailInput) emailInput.value = '';
-                    if (amountInput) amountInput.value = '';
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        showToast(data.error, 'error');
+                    } else {
+                        showToast(data.message, 'success');
+                        // Réinitialiser les champs
+                        if (nomInput) nomInput.value = '';
+                        if (emailInput) emailInput.value = '';
+                        if (amountInput) amountInput.value = '';
 
-                    // Recharger les détails du parrainage du client pour afficher le filleul
-                    loadClientReferralDetail(parrainEmail, commerceId);
+                        // Recharger les détails du parrainage du client pour afficher le filleul
+                        loadClientReferralDetail(parrainEmail, commerceId);
 
-                    // Recharger également la liste globale de clients en arrière-plan
-                    const activeView = localStorage.getItem('ratenza_active_view') || 'stats';
-                    if (activeView === 'stats') {
-                        handleStatsCommerceChange();
-                    } else if (activeView === 'clients') {
-                        fetchData();
+                        // Recharger également la liste globale de clients en arrière-plan
+                        const activeView = localStorage.getItem('ratenza_active_view') || 'stats';
+                        if (activeView === 'stats') {
+                            handleStatsCommerceChange();
+                        } else if (activeView === 'clients') {
+                            fetchData();
+                        }
                     }
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                showToast("Erreur réseau lors de la simulation du parrainage.", "error");
-            });
+                })
+                .catch(err => {
+                    console.error(err);
+                    showToast("Erreur réseau lors de la simulation du parrainage.", "error");
+                });
         }
 
         // Fermer le dropdown si on clique à l'extérieur
-        window.addEventListener('click', function(e) {
+        window.addEventListener('click', function (e) {
             const dropdown = document.getElementById('notif-dropdown');
             const btn = document.getElementById('btn-notifications');
             if (dropdown && dropdown.style.display === 'block') {
@@ -5315,29 +5348,41 @@
     </script>
 
     <!-- Modal de Visualisation Conversation Chatbot SAV -->
-    <div id="chatbot-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1.5rem;">
-        <div style="background: white; width: 100%; max-width: 580px; border-radius: 16px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15); display: flex; flex-direction: column; max-height: 80vh; overflow: hidden; animation: fadeIn 0.2s ease-out;">
+    <div id="chatbot-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1.5rem;">
+        <div
+            style="background: white; width: 100%; max-width: 580px; border-radius: 16px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15); display: flex; flex-direction: column; max-height: 80vh; overflow: hidden; animation: fadeIn 0.2s ease-out;">
             <!-- Header -->
-            <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; background: #faf5ff;">
+            <div
+                style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; background: #faf5ff;">
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <span style="background: #f3e8ff; color: #6b21a8; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <span
+                        style="background: #f3e8ff; color: #6b21a8; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                         <i data-lucide="message-square" style="width: 16px; height: 16px;"></i>
                     </span>
                     <div>
-                        <h3 id="chatbot-modal-title" style="margin: 0; font-size: 1rem; font-weight: 700; color: #1e1b4b;">Conversation</h3>
-                        <p id="chatbot-modal-subtitle" style="margin: 0; font-size: 0.75rem; color: #6b21a8; font-weight: 500;">Email</p>
+                        <h3 id="chatbot-modal-title"
+                            style="margin: 0; font-size: 1rem; font-weight: 700; color: #1e1b4b;">Conversation</h3>
+                        <p id="chatbot-modal-subtitle"
+                            style="margin: 0; font-size: 0.75rem; color: #6b21a8; font-weight: 500;">Email</p>
                     </div>
                 </div>
-                <button onclick="closeChatbotModal()" style="background: none; border: none; cursor: pointer; color: var(--text-secondary); width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.2s;"><i data-lucide="x" style="width: 18px; height: 18px;"></i></button>
+                <button onclick="closeChatbotModal()"
+                    style="background: none; border: none; cursor: pointer; color: var(--text-secondary); width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.2s;"><i
+                        data-lucide="x" style="width: 18px; height: 18px;"></i></button>
             </div>
             <!-- Body (Fil de conversation) -->
-            <div id="chatbot-modal-body" style="padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; background: #f8fafc; flex: 1;">
+            <div id="chatbot-modal-body"
+                style="padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; background: #f8fafc; flex: 1;">
                 <!-- Les messages s'affichent ici dynamiquement -->
             </div>
             <!-- Footer -->
-            <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 0.5rem; background: white;">
-                <button onclick="closeChatbotModal()" class="btn" style="background: #e2e8f0; color: var(--text-primary); border: none; padding: 0.5rem 1.25rem; font-weight: 600; border-radius: 8px; cursor: pointer;">Fermer</button>
-                <button id="chatbot-modal-unblock-btn" class="btn" style="background: var(--success); color: white; border: none; padding: 0.5rem 1.25rem; font-weight: 700; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+            <div
+                style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 0.5rem; background: white;">
+                <button onclick="closeChatbotModal()" class="btn"
+                    style="background: #e2e8f0; color: var(--text-primary); border: none; padding: 0.5rem 1.25rem; font-weight: 600; border-radius: 8px; cursor: pointer;">Fermer</button>
+                <button id="chatbot-modal-unblock-btn" class="btn"
+                    style="background: var(--success); color: white; border: none; padding: 0.5rem 1.25rem; font-weight: 700; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
                     <i data-lucide="unlock" style="width: 14px; height: 14px;"></i> Débloquer l'accès
                 </button>
             </div>
