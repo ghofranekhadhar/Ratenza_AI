@@ -9,7 +9,10 @@ const {
     sendGroupCampaign,
     triggerSmartAutomation,
     getCommerces,
-    getGlobalComparison
+    getGlobalComparison,
+    getReturnRate,
+    getRecommendations,
+    optOutRGPD
 } = require('../controllers/rfmController');
 
 const {
@@ -33,6 +36,9 @@ router.post('/referrals/declare', declareReferral);
 // GET  /api/global-comparison       → Comparaison globale de toutes les boutiques
 router.get('/global-comparison', getGlobalComparison);
 
+// GET  /api/kpis/return-rate        → Taux de retour client (Tr) d'une boutique
+router.get('/kpis/return-rate', getReturnRate);
+
 // GET  /api/data                  → Liste de tous les clients RFM
 router.get('/data', getRFMData);
 
@@ -53,5 +59,11 @@ router.post('/campaigns/send-group', sendGroupCampaign);
 
 // POST /api/campaigns/trigger-automation → Déclencher l'IA d'automatisation
 router.post('/campaigns/trigger-automation', triggerSmartAutomation);
+
+// GET  /api/recommendations              → Recommandations IA rule-based pour une boutique
+router.get('/recommendations', getRecommendations);
+
+// POST /api/rgpd/opt-out                 → Désactiver le ciblage marketing pour un client (RGPD)
+router.post('/rgpd/opt-out', optOutRGPD);
 
 module.exports = router;

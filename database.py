@@ -90,3 +90,29 @@ def save_rfm_results(commerce_id: str, rfm_df: pd.DataFrame):
     except Exception as e:
         logger.error(f"Erreur lors de la sauvegarde des résultats RFM : {e}")
         raise e
+
+
+def save_return_rate(commerce_id: str, kpis: dict):
+    """Sauvegarde ou met à jour le Taux de Retour Client dans la collection 'kpis_boutiques'."""
+    client = get_mongo_client()
+    try:
+        db = client[DB_NAME]
+        
+        doc = {
+            "commerce_id": commerce_id,
+            "taux_retour_30j": kpis["taux_retour_30j"],
+            "clients_actifs_30j": kpis["clients_actifs_30j"],
+            "clients_revenus_30j": kpis["clients_revenus_30j"],
+            "date_calcul": kpis["date_calcul"]
+        }
+        
+        # Upsert sur la clé unique commerce_id
+        db.kpis_boutiques.update_one(
+            {"commerce_id": commerce_id},
+            {"$set": doc},
+            upsert=True
+        )
+        logger.info(f"Sauvegarde MongoDB : Taux de retour mis à jour pour '{commerce_id}' ({kpis['taux_retour_30j']}%).")
+    except Exception as e:
+        logger.error(f"Erreur lors de la sauvegarde du taux de retour : {e}")
+        raise e

@@ -2,7 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const rfmRoutes = require('./routes/rfmRoutes');
+const rfmRoutes     = require('./routes/rfmRoutes');
+const loyaltyRoutes = require('./routes/loyaltyRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -24,6 +25,7 @@ app.use((req, res, next) => {
 // Routes API REST
 // ============================================================
 app.use('/api', rfmRoutes);
+app.use('/api/loyalty', loyaltyRoutes);
 app.use('/api/chatbot', require('./routes/chatbotRoutes'));
 
 // ============================================================
@@ -118,6 +120,9 @@ app.listen(PORT, () => {
     console.log('║   GET  /api/data                → KPIs + RFM    ║');
     console.log('║   GET  /api/transactions/:email → Achats client  ║');
     console.log('║   POST /api/recalculate         → Pipeline RFM   ║');
+    console.log('║   POST /api/loyalty/credit      → Fidélité pts   ║');
+    console.log('║   POST /api/loyalty/redeem      → Utiliser code  ║');
+    console.log('║   GET  /api/loyalty/balance/:e  → Solde client   ║');
     console.log('╚══════════════════════════════════════════════════╝');
     console.log('');
 

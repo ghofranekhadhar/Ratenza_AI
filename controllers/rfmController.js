@@ -165,6 +165,12 @@ const sendCampaignEmail = async (req, res) => {
     try {
         const db = await connectDB();
 
+        // Vérification RGPD
+        const client = await db.collection('clients').findOne({ email: email, commerce_id: commerceId });
+        if (client && client.rgpd_opt_out === true) {
+            return res.status(400).json({ error: `Le client ${email} s'est désabonné du ciblage marketing (RGPD).` });
+        }
+
         // Envoi réel ou simulation via le service emailService
         const result = await sendEmail({
             to: email,
@@ -229,20 +235,95 @@ const getClientCampaignHistory = async (req, res) => {
 // Envoie un e-mail à un groupe de clients en batch
 // ============================================================
 const sendGroupCampaign = async (req, res) => {
-    const { clients, subject, body, commerce_id } = req.body || {};
+    const { clients, subject, body, commerce_id, filters } = req.body || {};
     const commerceId = commerce_id || COMMERCE_ID;
 
-    if (!clients || !Array.isArray(clients) || clients.length === 0 || !subject || !body) {
-        return res.status(400).json({ error: 'Champs requis manquants : clients (array), subject, body.' });
+    if ((!clients || !Array.isArray(clients) || clients.length === 0) && !filters) {
+        return res.status(400).json({ error: 'Champs requis manquants : clients (array) ou filters.' });
+    }
+    if (!subject || !body) {
+        return res.status(400).json({ error: 'Champs requis manquants : subject, body.' });
     }
 
     try {
         const db = await connectDB();
+
+        // 1. Récupérer les infos RGPD depuis la collection clients
+        const clientsDb = await db.collection('clients')
+            .find({ commerce_id: commerceId }, { projection: { email: 1, rgpd_opt_out: 1 } })
+            .toArray();
+        const rgpdOptOutSet = new Set(
+            clientsDb.filter(c => c.rgpd_opt_out === true).map(c => c.email ? c.email.toLowerCase() : '').filter(Boolean)
+        );
+
+        // 2. Déterminer la liste de base des clients
+        let rawClients = clients || [];
+        if (rawClients.length === 0) {
+            // Si pas de liste passée, récupérer tous les clients de la boutique
+            const dbAnalyses = await db.collection('analyses_ia').find({ commerce_id: commerceId }).toArray();
+            rawClients = dbAnalyses.map(c => ({
+                email: c.email || c.client_db_id,
+                nom: c.nom || c.email || c.client_db_id,
+                segment: c.segment_gmm || 'group'
+            }));
+        }
+
+        // 3. Exclure systématiquement les clients ayant désactivé le ciblage (RGPD)
+        let filteredClientsList = rawClients.filter(c => c.email && !rgpdOptOutSet.has(c.email.toLowerCase()));
+
+        // 4. Appliquer les filtres de ciblage supplémentaires s'ils sont fournis
+        if (filters) {
+            const { onlyBaisse, onlyAmbassadors, segment_gmm, close_to_palier } = filters;
+            
+            const dbAnalyses = await db.collection('analyses_ia').find({ commerce_id: commerceId }).toArray();
+            const clientStatsMap = {};
+            dbAnalyses.forEach(c => {
+                if (c.email) clientStatsMap[c.email.toLowerCase()] = c;
+            });
+
+            let closeEmails = new Set();
+            if (close_to_palier) {
+                const loyaltyDocs = await db.collection('points_fidelite').find({
+                    commerce_id: commerceId,
+                    $or: [
+                        { points_cumules: { $gte: 80, $lt: 100 } },
+                        { points_cumules: { $gte: 180, $lt: 200 } }
+                    ]
+                }).toArray();
+                closeEmails = new Set(loyaltyDocs.map(d => d.client_email.toLowerCase()));
+            }
+
+            filteredClientsList = filteredClientsList.filter(c => {
+                const emailLower = c.email ? c.email.toLowerCase() : '';
+                const stats = clientStatsMap[emailLower];
+                if (!stats) return false;
+
+                if (onlyBaisse && stats.baisse_frequence_detectee !== true) return false;
+                if (segment_gmm && segment_gmm !== 'all' && stats.segment_gmm !== segment_gmm) return false;
+                if (close_to_palier && !closeEmails.has(emailLower)) return false;
+
+                if (onlyAmbassadors) {
+                    const scoreInfluence = stats.influence_score !== undefined
+                        ? stats.influence_score
+                        : Math.round(((stats.score_global_sa || 0) * 0.7 + (1.0 - (stats.churn_score || 0)) * 0.3) * 100);
+                    if (scoreInfluence < 80) return false;
+                }
+                return true;
+            });
+        }
+
+        if (filteredClientsList.length === 0) {
+            return res.json({
+                status: 'success',
+                message: "Aucun client ne correspond aux critères de filtrage ou tous se sont désabonnés (RGPD)."
+            });
+        }
+
         const sentAt = new Date().toISOString();
         const campaignsToInsert = [];
 
-        // Utiliser Promise.all pour l'envoi parallèle
-        const sendPromises = clients.map(async (client) => {
+        // Envoi parallèle
+        const sendPromises = filteredClientsList.map(async (client) => {
             const finalSubject = subject.replace(/{nom}/g, client.nom || client.email);
             const finalBody = body.replace(/{nom}/g, client.nom || client.email);
 
@@ -312,19 +393,22 @@ const runSmartAutomationInternal = async (commerceId) => {
 
     const sentAt = new Date().toISOString();
     const campaignsToInsert = [];
-    const stats = { ambassador_invite: 0, birthday_gift: 0, vip_danger: 0, vip: 0, regular: 0, at_risk: 0, lost: 0, skipped_cooldown: 0 };
+    const stats = { ambassador_invite: 0, birthday_gift: 0, vip_danger: 0, vip: 0, regular: 0, baisse_frequence: 0, at_risk: 0, lost: 0, skipped_cooldown: 0 };
 
     // 2. Récupérer les campagnes envoyées ces 30 derniers jours pour le cooldown anti-spam
+    //    EXCLUSION INTENTIONNELLE : birthday_gift et ambassador_invite ne comptent PAS dans ce cooldown
+    //    car ce sont des événements ponctuels ; un anniversaire ne doit pas bloquer une promotion et vice versa.
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const recentCampaigns = await db.collection('campagnes_envoyees')
         .find({
             commerce_id: commerceId,
-            sent_at: { $gte: thirtyDaysAgo.toISOString() }
+            sent_at: { $gte: thirtyDaysAgo.toISOString() },
+            category: { $nin: ['birthday_gift', 'ambassador_invite'] } // ces catégories ont leur propre anti-doublon
         })
         .toArray();
 
-    // Map email -> date du dernier envoi
+    // Map email -> date du dernier envoi de campagne promotionnelle/automatique
     const lastSentMap = {};
     recentCampaigns.forEach(c => {
         const email = c.client_email;
@@ -335,6 +419,12 @@ const runSmartAutomationInternal = async (commerceId) => {
             }
         }
     });
+
+    // 2b. RGPD : récupérer les clients ayant désactivé le ciblage marketing
+    const rgpdClients = await db.collection('clients')
+        .find({ commerce_id: commerceId, rgpd_opt_out: true }, { projection: { email: 1 } })
+        .toArray();
+    const rgpdOptOutSet = new Set(rgpdClients.map(c => c.email ? c.email.toLowerCase() : '').filter(Boolean));
 
     // 3. Récupérer les cadeaux d'anniversaire envoyés ces 300 derniers jours (anti-doublon d'anniversaire)
     const threeHundredDaysAgo = new Date();
@@ -364,6 +454,11 @@ const runSmartAutomationInternal = async (commerceId) => {
     const promises = clients.map(async (client) => {
         const clientEmail = client.email || client.client_db_id;
         if (!clientEmail) return;
+
+        // --- GARDE RGPD : exclure les clients ayant désactivé le ciblage marketing ---
+        // NOTE : les e-mails transactionnels (confirmation commande, crédit points) ne passent
+        // pas par cet automatiseur et ne sont donc pas affectés par ce garde.
+        if (rgpdOptOutSet.has(clientEmail.toLowerCase())) return;
 
         const nomClient = client.nom || clientEmail || 'Client';
         const churnScore = client.churn_score || 0;
@@ -509,6 +604,17 @@ const runSmartAutomationInternal = async (commerceId) => {
                 finalBody    = `Bonjour ${nomClient},\n\nNe laissez pas passer nos nouvelles promotions ! Profitez de 15% de réduction sur votre prochain achat avec le code : PROMO15.\n\nOffre valable cette semaine seulement.`;
                 category     = 'regular';
             }
+            // Règle 8.5 : Baisse de Fréquence détectée (Δ < -25%) — client encore "regular" par GMM
+            // ANTI-CHEVAUCHEMENT : cette règle ne s'applique QUE si le segment GMM est 'regular'.
+            // Si le client est déjà 'at_risk' ou 'lost', les règles 4-7 ci-dessus ont déjà géré
+            // son cas avec une offre plus agressive. Pas de double envoi.
+            else if (client.baisse_frequence_detectee === true && client.segment_gmm === 'regular') {
+                const deltaPct = client.delta_frequence ? Math.round(Math.abs(client.delta_frequence) * 100) : 25;
+                finalSubject = `${nomClient}, on vous a remarqué 👀 — une offre pour vous fidéliser`;
+                finalBody    = `Bonjour ${nomClient},\n\nNous avons remarqué que vos achats ont baissé de ${deltaPct}% ce dernier mois. Nous ne voulons pas vous perdre !\n\nPour vous remercier de votre fidélité passée, voici une remise de 15% sur votre prochain achat avec le code : FIDELITE15.\n\nCette offre est valable 14 jours. N'hésitez pas à en profiter !\n\nL'équipe Retenza 💛`;
+                category     = 'baisse_frequence';
+                console.log(`🤖 [AUTO IA] 📉 BAISSE FRÉQUENCE détectée : Δ=-${deltaPct}% pour ${nomClient} (${clientEmail}) — segment GMM: ${client.segment_gmm}`);
+            }
             // Règle 9 : Régulier fidèle → Newsletter et nouveautés
             else {
                 finalSubject = `Nos nouveautés vous attendent, ${nomClient} !`;
@@ -617,6 +723,7 @@ const getCommerces = async (req, res) => {
 // ============================================================
 // Comparateur Global de Boutiques
 // ============================================================
+// ============================================================
 const getGlobalComparison = async (req, res) => {
     try {
         const db = await connectDB();
@@ -647,19 +754,47 @@ const getGlobalComparison = async (req, res) => {
                     // Churn critique = churn_score >= 0.75
                     critical_churn_count: { $sum: { $cond: [{ $gte: ['$churn_score', 0.75] }, 1, 0] } },
                     // Ambassadeurs = influence_score >= 80
-                    ambassador_count: { $sum: { $cond: [{ $gte: ['$influence_score', 80] }, 1, 0] } }
+                    ambassador_count: { $sum: { $cond: [{ $gte: ['$influence_score', 80] }, 1, 0] } },
+                    // Clients avec baisse de fréquence d'achat (Option A)
+                    baisse_freq_count: { $sum: { $cond: [{ $eq: ['$baisse_frequence_detectee', true] }, 1, 0] } }
                 }
             },
             { $sort: { ca_total: -1 } }
         ]).toArray();
 
-        // Enrichir avec les noms lisibles
+        // Charger les KPIs de boutique (pour le Taux de Retour Client) (Option A)
+        const kpis = await db.collection('kpis_boutiques').find().toArray();
+
+        // Agrégation de la fidélité par commerce (Option A)
+        const loyaltyStats = await db.collection('points_fidelite').aggregate([
+            {
+                $group: {
+                    _id: '$commerce_id',
+                    total_cumules: { $sum: '$points_cumules' },
+                    total_disponibles: { $sum: '$points_disponibles' },
+                    total_utilises: { $sum: '$points_utilises' },
+                    nb_membres: { $sum: 1 }
+                }
+            }
+        ]).toArray();
+
+        // Enrichir avec les noms lisibles et les nouvelles données
         const result = stats.map(s => {
             let label = commerceLabels[s._id];
             if (!label) {
                 // Nettoyage générique de l'ID (ex: commerce_local_3 -> Local 3, commerce_sf -> Sf)
                 label = s._id.replace('commerce_', '').replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
             }
+
+            // Récupérer le taux de retour
+            const kpi = kpis.find(k => k.commerce_id === s._id);
+            const taux_retour = kpi ? kpi.taux_retour_30j : 0;
+
+            // Récupérer les stats de fidélité
+            const loyalty = loyaltyStats.find(l => l._id === s._id);
+            const loyalty_points = loyalty ? loyalty.total_cumules : 0;
+            const loyalty_membres = loyalty ? loyalty.nb_membres : 0;
+
             return {
                 ...s,
                 label,
@@ -668,13 +803,188 @@ const getGlobalComparison = async (req, res) => {
                 ca_total:           Math.round(s.ca_total * 100) / 100,
                 panier_moyen:       Math.round(s.panier_moyen * 100) / 100,
                 recence_moyenne:    Math.round(s.recence_moyenne * 10) / 10,
-                freq_moyenne:       Math.round(s.freq_moyenne * 10) / 10
+                freq_moyenne:       Math.round(s.freq_moyenne * 10) / 10,
+                taux_retour_pct:    Math.round(taux_retour * 100) / 100, // Déjà en % dans kpis_boutiques
+                baisse_freq_count:  s.baisse_freq_count || 0,
+                loyalty_points:     loyalty_points,
+                loyalty_membres:    loyalty_membres
             };
         });
 
         return res.json({ status: 'success', data: result });
     } catch (err) {
         console.error('❌ getGlobalComparison error :', err.message);
+        return res.status(500).json({ error: err.message });
+    }
+};
+
+// ============================================================
+// GET /api/kpis/return-rate?commerce_id=...
+// Retourne le Taux de Retour Client (Tr) de la boutique.
+// ============================================================
+const getReturnRate = async (req, res) => {
+    const commerceId = req.query.commerce_id || COMMERCE_ID;
+
+    try {
+        const db = await connectDB();
+        const kpi = await db.collection('kpis_boutiques').findOne({ commerce_id: commerceId });
+
+        if (!kpi) {
+            return res.json({
+                status: 'success',
+                data: {
+                    commerce_id: commerceId,
+                    taux_retour_30j: 0.0,
+                    clients_actifs_30j: 0,
+                    clients_revenus_30j: 0,
+                    date_calcul: new Date().toISOString()
+                }
+            });
+        }
+
+        if (kpi._id) kpi._id = kpi._id.toString();
+
+        return res.json({
+            status: 'success',
+            data: kpi
+        });
+    } catch (err) {
+        console.error('❌ getReturnRate error :', err.message);
+        return res.status(500).json({ error: err.message });
+    }
+};
+
+// ============================================================
+// GET /api/recommendations?commerce_id=...
+// Renvoie des recommandations IA rule-based pour la boutique.
+// - Si Tr < 50% → suggérer campagne fidélité
+// - Si baisse fréquence > 20% des réguliers → suggérer campagne baisse fréquence
+// - Si clients proches d'un palier (80-99 ou 180-199 pts) → suggérer boost points
+// ============================================================
+const getRecommendations = async (req, res) => {
+    const commerceId = req.query.commerce_id || COMMERCE_ID;
+    try {
+        const db = await connectDB();
+        const recommendations = [];
+
+        // --- Règle 1 : Taux de Retour Client (Tr) ---
+        const kpi = await db.collection('kpis_boutiques').findOne({ commerce_id: commerceId });
+        const tr = kpi ? (kpi.taux_retour_30j || 0) : 0;
+        if (tr < 50) {
+            recommendations.push({
+                id: 'low_return_rate',
+                type: 'warning',
+                priority: 1,
+                title: 'Taux de retour client faible',
+                message: `Votre taux de retour est de ${tr.toFixed(1)}% sur les 30 derniers jours (seuil recommandé : 50%). Activez le programme de fidélité ou lancez une campagne de rétention.`,
+                action: {
+                    label: 'Lancer une campagne fidélité',
+                    filters: { segment_gmm: 'regular' }
+                }
+            });
+        }
+
+        // --- Règle 2 : Baisse de Fréquence ---
+        const analyses = await db.collection('analyses_ia').find({ commerce_id: commerceId }).toArray();
+        const total = analyses.length;
+        const regularClients = analyses.filter(c => c.segment_gmm === 'regular');
+        const baisseCount = analyses.filter(c => c.baisse_frequence_detectee === true).length;
+        const baissePct = total > 0 ? (baisseCount / total) * 100 : 0;
+
+        if (baissePct > 20) {
+            recommendations.push({
+                id: 'freq_drop',
+                type: 'alert',
+                priority: 2,
+                title: 'Baisse de fréquence détectée',
+                message: `${baisseCount} clients (${baissePct.toFixed(1)}% du total) ont baissé leurs achats de plus de 25% ce mois-ci. Recommandation : lancez une campagne "Baisse de Fréquence" ciblée.`,
+                action: {
+                    label: 'Lancer campagne Baisse de Fréquence',
+                    filters: { onlyBaisse: true }
+                }
+            });
+        }
+
+        // --- Règle 3 : Clients proches d'un palier de fidélité (80-99 pts OU 180-199 pts) ---
+        // Bornes : [80, 100[ et [180, 200[ — les seuils exacts 100 et 200 sont déjà débloqués.
+        const closeToPalierDocs = await db.collection('points_fidelite').find({
+            commerce_id: commerceId,
+            $or: [
+                { points_cumules: { $gte: 80, $lt: 100 } },
+                { points_cumules: { $gte: 180, $lt: 200 } }
+            ]
+        }).toArray();
+
+        if (closeToPalierDocs.length > 0) {
+            recommendations.push({
+                id: 'close_to_tier',
+                type: 'opportunity',
+                priority: 3,
+                title: 'Clients proches d\'un palier de fidélité',
+                message: `${closeToPalierDocs.length} client(s) sont à moins de 20 points du prochain palier de réduction (FID10 ou FID20). Un email de motivation pourrait déclencher un achat.`,
+                action: {
+                    label: 'Envoyer un boost de points',
+                    filters: { close_to_palier: true }
+                }
+            });
+        }
+
+        // Trier par priorité croissante
+        recommendations.sort((a, b) => a.priority - b.priority);
+
+        return res.json({
+            status: 'success',
+            commerce_id: commerceId,
+            count: recommendations.length,
+            data: recommendations,
+            meta: {
+                total_clients: total,
+                tr_30j: tr,
+                baisse_freq_pct: parseFloat(baissePct.toFixed(1)),
+                close_to_palier_count: closeToPalierDocs.length
+            }
+        });
+    } catch (err) {
+        console.error('❌ getRecommendations error :', err.message);
+        return res.status(500).json({ error: err.message });
+    }
+};
+
+// ============================================================
+// POST /api/rgpd/opt-out
+// Marque le client comme ayant désactivé le ciblage marketing.
+// NOTE IMPORTANTE : Cette action bloque UNIQUEMENT les campagnes marketing
+// automatiques et groupées. Les e-mails transactionnels (confirmation de
+// commande, crédit de points de fidélité, etc.) ne sont PAS concernés car
+// ils ne passent pas par le moteur d'automatisation.
+// ============================================================
+const optOutRGPD = async (req, res) => {
+    const { email, commerce_id } = req.body || {};
+    const commerceId = commerce_id || COMMERCE_ID;
+
+    if (!email) {
+        return res.status(400).json({ error: 'Champ requis manquant : email.' });
+    }
+
+    try {
+        const db = await connectDB();
+        const result = await db.collection('clients').updateOne(
+            { email: email, commerce_id: commerceId },
+            { $set: { rgpd_opt_out: true, rgpd_opt_out_date: new Date().toISOString() } }
+        );
+
+        if (result.matchedCount === 0) {
+            return res.status(404).json({ error: `Client introuvable : ${email} pour la boutique ${commerceId}.` });
+        }
+
+        return res.json({
+            status: 'success',
+            message: `Le ciblage marketing a été désactivé pour ${email}. Les e-mails transactionnels restent actifs.`,
+            matched: result.matchedCount,
+            modified: result.modifiedCount
+        });
+    } catch (err) {
+        console.error('❌ optOutRGPD error :', err.message);
         return res.status(500).json({ error: err.message });
     }
 };
@@ -689,5 +999,9 @@ module.exports = {
     triggerSmartAutomation,
     runSmartAutomationInternal,
     getCommerces,
-    getGlobalComparison
+    getGlobalComparison,
+    getReturnRate,
+    getRecommendations,
+    optOutRGPD
 };
+

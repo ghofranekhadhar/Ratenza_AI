@@ -6,8 +6,8 @@ import pandas as pd
 from tabulate import tabulate
 
 from config import DEFAULT_WR, DEFAULT_WF, DEFAULT_WM, LOG_LEVEL
-from database import load_clients, load_transactions, save_rfm_results, get_mongo_client
-from rfm import calculate_raw_rfm, normalize_rfm
+from database import load_clients, load_transactions, save_rfm_results, get_mongo_client, save_return_rate
+from rfm import calculate_raw_rfm, normalize_rfm, calculate_frequency_delta, calculate_return_rate
 from gmm import segment_with_gmm
 from xgboost_churn import predict_churn_risk
 import logging
@@ -65,6 +65,23 @@ def run_rfm_pipeline(commerce_id: str):
     tx_with_email["email"] = tx_with_email["email"].fillna(tx_with_email["client_id"])
     
     rfm_raw = calculate_raw_rfm(tx_with_email, ref_date=max_tx_date)
+
+    # 3.5 Calcul de la variation de fréquence d'achat (Δ < -25% → baisse détectée)
+    logger.info("Calcul de la variation de fréquence d'achat (signal baisse précoce)...")
+    delta_df = calculate_frequency_delta(tx_with_email, ref_date=max_tx_date)
+    # Fusionner le delta dans rfm_raw (jointure sur client_id)
+    if not delta_df.empty:
+        rfm_raw = rfm_raw.merge(
+            delta_df[["client_id", "freq_recente", "freq_historique",
+                       "delta_frequence", "baisse_frequence_detectee", "date_calcul_delta"]],
+            on="client_id",
+            how="left"
+        )
+        # Valeurs par défaut pour les clients sans historique suffisant
+        rfm_raw["delta_frequence"] = rfm_raw["delta_frequence"].fillna(0.0)
+        rfm_raw["baisse_frequence_detectee"] = rfm_raw["baisse_frequence_detectee"].fillna(False)
+        rfm_raw["freq_recente"] = rfm_raw["freq_recente"].fillna(0)
+        rfm_raw["freq_historique"] = rfm_raw["freq_historique"].fillna(0.0)
     
     # 4. Normalisation et calcul du score global Sa
     logger.info("Normalisation des métriques et calcul du score global comportemental Sa...")
@@ -165,6 +182,11 @@ def run_rfm_pipeline(commerce_id: str):
         results_df = results_df.drop(columns=["id"])
         
     save_rfm_results(commerce_id, results_df)
+
+    # 8.5 Calculer et sauvegarder le Taux de Retour Client (Tr)
+    logger.info("Calcul du Taux de Retour Client (Tr) sur 30 jours...")
+    kpis_retour = calculate_return_rate(tx_with_email, ref_date=max_tx_date)
+    save_return_rate(commerce_id, kpis_retour)
     
     logger.info("Analyse RFM terminée avec succès !")
 

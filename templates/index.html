@@ -1533,6 +1533,21 @@
                 </div>
             </div>
 
+            <!-- Conteneur des Suggestions & Recommandations IA -->
+            <div id="ai-recommendations-container" style="display: none; margin-bottom: 1.5rem; margin-top: 1rem;">
+                <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.04) 0%, rgba(139, 92, 246, 0.04) 100%); border: 1px solid rgba(99, 102, 241, 0.12); border-radius: 16px; padding: 1.25rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.85rem;">
+                        <div style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: rgba(99, 102, 241, 0.12); color: #6366f1; border-radius: 50%;">
+                            <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
+                        </div>
+                        <h4 style="font-size: 0.95rem; font-weight: 700; color: #1e1b4b; margin: 0; font-family: 'Outfit', sans-serif;">💡 Suggestions &amp; Recommandations IA</h4>
+                    </div>
+                    <div id="ai-recommendations-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+                        <!-- Inséré dynamiquement -->
+                    </div>
+                </div>
+            </div>
+
             <!-- KPI Row 1 : Métriques RFM -->
             <div class="kpi-section-label">Métriques RFM</div>
             <div class="kpi-grid" style="margin-bottom: 1.5rem;">
@@ -1631,6 +1646,20 @@
                         <div class="kpi-subtext" style="color: #a16207;">Score d'influence >= 80%</div>
                     </div>
                 </div>
+
+                <!-- KPI Taux de Retour Client (Option A) -->
+                <div class="kpi-card kpi-violet" id="kpi-return-rate-card">
+                    <div class="kpi-header">
+                        <h3 class="kpi-title">Taux de Retour Client</h3>
+                        <div class="kpi-icon">
+                            <i data-lucide="refresh-cw" class="kpi-svg-icon"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="kpi-value" id="kpi-return-rate">-</div>
+                        <div class="kpi-subtext" id="kpi-return-rate-subtext">Calculé sur les 30 derniers jours</div>
+                    </div>
+                </div>
             </div>
 
             <!-- Ligne des graphiques -->
@@ -1713,63 +1742,103 @@
                 </div>
             </div>
 
-            <!-- Barre de filtres (toolbar pro, 1 ligne) -->
-            <div class="controls-row">
-
-                <!-- Sélecteur Boutique -->
-                <select id="commerce-selector" class="commerce-select" onchange="handleCommerceChange()"
-                    style="flex-shrink:0; padding: 0.5rem 2.2rem 0.5rem 0.85rem; font-size:0.85rem; border-radius:10px;">
-                    <option value="__all__" selected>Toutes les boutiques</option>
-                </select>
-
-                <div class="controls-divider"></div>
-
-                <!-- Filtre Risque Churn -->
-                <select id="churn-filter" class="commerce-select" onchange="handleFilterAndSearch()"
-                    style="flex-shrink:0; padding: 0.5rem 2.2rem 0.5rem 0.85rem; font-size:0.85rem; border-radius:10px;">
-                    <option value="all">⚡ Risque Churn (Tous)</option>
-                    <option value="Faible">🟢 Risque Faible</option>
-                    <option value="Moyen">🟡 Risque Moyen</option>
-                    <option value="Élevé">🔴 Risque Élevé</option>
-                    <option value="Critique">🚨 Risque Critique</option>
-                </select>
-
-                <div class="controls-divider"></div>
-
-                <!-- Recherche -->
-                <div class="search-container">
-                    <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                    <input type="text" class="search-input" id="search-input"
-                        placeholder="Rechercher par nom ou email..." oninput="handleFilterAndSearch()">
+            <!-- Barre de filtres SaaS Premium (2 lignes épurées) -->
+            <div class="filters-container-two-rows" style="
+                display: flex; flex-direction: column; gap: 0;
+                margin-bottom: 1.5rem;
+                background: #ffffff;
+                border: 1px solid rgba(15, 23, 42, 0.08);
+                border-radius: 16px;
+                overflow: hidden;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            ">
+                <!-- ── LIGNE 1 : Barre de recherche pleine largeur ── -->
+                <div style="padding: 0.85rem 1.25rem; border-bottom: 1px solid #e2e8f0;">
+                    <div class="search-container" style="position: relative; width: 100%;">
+                        <svg class="search-icon" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
+                            viewBox="0 0 24 24" style="position:absolute; left:1rem; top:50%; transform:translateY(-50%); color:var(--text-secondary); pointer-events:none;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <input type="text" class="search-input" id="search-input"
+                            placeholder="🔍  Rechercher par nom ou email..."
+                            oninput="handleFilterAndSearch()"
+                            style="width: 100%; padding: 0.65rem 1rem 0.65rem 2.7rem; border-radius: 10px; border: 1px solid var(--border-color); background: #f8fafc; font-size: 0.92rem; box-sizing: border-box;">
+                    </div>
                 </div>
 
-                <div class="controls-divider"></div>
+                <!-- ── LIGNE 2 : Tous les filtres sur UNE SEULE ligne ── -->
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    padding: 0.65rem 1.25rem;
+                    background: #fafbfc;
+                    flex-wrap: nowrap;
+                    overflow-x: auto;
+                    min-height: 50px;
+                ">
+                    <!-- Boutique -->
+                    <select id="commerce-selector" class="commerce-select" onchange="handleCommerceChange()"
+                        style="padding: 0.42rem 1.8rem 0.42rem 0.7rem; font-size: 0.82rem; border-radius: 9px; box-shadow: none; border-color: var(--border-color); flex-shrink: 0;">
+                        <option value="__all__" selected>📍 Toutes les boutiques</option>
+                    </select>
 
-                <!-- Onglets Segment -->
-                <div class="filter-tabs">
-                    <button class="tab-btn active" onclick="filterSegment('all')">Tous</button>
-                    <button class="tab-btn" onclick="filterSegment('vip')">VIP</button>
-                    <button class="tab-btn" onclick="filterSegment('regular')">Réguliers</button>
-                    <button class="tab-btn" onclick="filterSegment('at_risk')">À risque</button>
-                    <button class="tab-btn" onclick="filterSegment('lost')">Perdus</button>
+                    <!-- Période -->
+                    <select id="period-filter-fictif" class="commerce-select" onchange="handlePeriodChange()"
+                        style="padding: 0.42rem 1.8rem 0.42rem 0.7rem; font-size: 0.82rem; border-radius: 9px; box-shadow: none; border-color: var(--border-color); flex-shrink: 0;">
+                        <option value="all" selected>📅 Historique complet</option>
+                        <option value="180">📅 6 derniers mois</option>
+                        <option value="90">📅 90 derniers jours</option>
+                        <option value="30">📅 30 derniers jours</option>
+                    </select>
+
+                    <!-- Séparateur -->
+                    <div style="width: 1px; height: 24px; background: #e2e8f0; flex-shrink: 0;"></div>
+
+                    <!-- Onglets Segment — centre, occupe l'espace disponible -->
+                    <div class="filter-tabs" style="flex: 1; min-width: 0; justify-content: center;">
+                        <button class="tab-btn active" onclick="filterSegment('all')">Tous</button>
+                        <button class="tab-btn" onclick="filterSegment('vip')">VIP</button>
+                        <button class="tab-btn" onclick="filterSegment('regular')">Réguliers</button>
+                        <button class="tab-btn" onclick="filterSegment('at_risk')">À risque</button>
+                        <button class="tab-btn" onclick="filterSegment('lost')">Perdus</button>
+                    </div>
+
+                    <!-- Séparateur -->
+                    <div style="width: 1px; height: 24px; background: #e2e8f0; flex-shrink: 0;"></div>
+
+                    <!-- Churn -->
+                    <select id="churn-filter" class="commerce-select" onchange="handleFilterAndSearch()"
+                        style="padding: 0.42rem 1.8rem 0.42rem 0.7rem; font-size: 0.82rem; border-radius: 9px; box-shadow: none; border-color: var(--border-color); flex-shrink: 0;">
+                        <option value="all">⚡ Churn</option>
+                        <option value="Faible">🟢 Faible</option>
+                        <option value="Moyen">🟡 Moyen</option>
+                        <option value="Élevé">🔴 Élevé</option>
+                        <option value="Critique">🚨 Critique</option>
+                    </select>
+
+                    <!-- Ambassadeurs -->
+                    <button id="ambassador-filter-btn" onclick="toggleAmbassadorFilter()" style="display:flex; align-items:center; gap:4px; padding:0.42rem 0.7rem; border-radius:9px; font-weight:700; background:#fff; border:1px solid var(--border-color); color:#ca8a04; cursor:pointer; transition:all 0.2s; white-space:nowrap; font-family:'Outfit',sans-serif; font-size:0.82rem; flex-shrink:0;">
+                        👑 Ambassadeurs
+                    </button>
+
+                    <!-- Baisse Fréquence -->
+                    <button id="baisse-filter-btn" onclick="toggleBaisseFilter()" style="display:flex; align-items:center; gap:4px; padding:0.42rem 0.7rem; border-radius:9px; font-weight:700; background:#fff; border:1px solid var(--border-color); color:#dc2626; cursor:pointer; transition:all 0.2s; white-space:nowrap; font-family:'Outfit',sans-serif; font-size:0.82rem; flex-shrink:0;">
+                        📉 Baisse fréquence
+                    </button>
+
+                    <!-- Séparateur -->
+                    <div style="width: 1px; height: 24px; background: #e2e8f0; flex-shrink: 0;"></div>
+
+                    <!-- Compteur -->
+                    <div style="display:flex; align-items:center; gap:0.3rem; font-size:0.82rem; font-weight:700; background:#f1f5f9; border:1px solid var(--border-color); padding:0.42rem 0.8rem; border-radius:9px; white-space:nowrap; flex-shrink:0;">
+                        <span id="filtered-count" style="color:var(--primary); font-weight:800;">0</span>
+                        <span style="color:#cbd5e1;">/</span>
+                        <span id="total-count" style="color:var(--text-secondary);">0</span>
+                        <span style="color:var(--text-secondary);">clients</span>
+                    </div>
+
                 </div>
-
-                <div class="controls-divider"></div>
-
-                <!-- Bouton Filtre Ambassadeurs -->
-                <button id="ambassador-filter-btn" onclick="toggleAmbassadorFilter()" style="display: flex; align-items: center; gap: 6px; padding: 0.5rem 0.85rem; border-radius: 10px; font-weight: 700; background: #fff; border: 1px solid var(--border-color); color: #ca8a04; cursor: pointer; transition: all 0.2s; white-space: nowrap; font-family: 'Outfit', sans-serif;">
-                    <span>👑 Ambassadeurs</span>
-                </button>
-
-                <!-- Compteur -->
-                <div class="count-badge" style="margin-left: auto;">
-                    <span id="filtered-count">0</span> / <span id="total-count">0</span> clients
-                </div>
-
             </div>
 
             <!-- Conteneur du Tableau -->
@@ -1816,7 +1885,10 @@
     <div class="drawer" id="drawer">
         <div class="drawer-header">
             <div class="drawer-title-container">
-                <h2 id="drawer-client-name">Nom du Client</h2>
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                    <h2 id="drawer-client-name" style="margin:0;">Nom du Client</h2>
+                    <span id="drawer-client-rgpd-badge" style="display: none; background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; font-size: 0.68rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 6px; font-family: 'Outfit', sans-serif; white-space: nowrap;">🛡️ Désabonné (RGPD)</span>
+                </div>
                 <p id="drawer-client-email">email@exemple.com</p>
             </div>
             <button class="btn-close-drawer" onclick="closeClientDrawer()">×</button>
@@ -1849,6 +1921,16 @@
             <div id="drawer-referral-container"
                 style="display:none; flex-direction: column; gap: 1rem; margin-bottom: 2rem; background: #f8fafc; border: 1px solid var(--border-color); padding: 1.25rem; border-radius: 12px;">
                 <!-- Jauge d'influence, code, filleuls, paliers, simulation -->
+            </div>
+
+            <!-- Section Points de Fidélité (Option A) -->
+            <div class="drawer-section-title" id="drawer-loyalty-title" style="display:flex; margin-top: 1.5rem;">
+                <i data-lucide="award" style="width:18px;height:18px;"></i>
+                Programme de Fidélité
+            </div>
+            <div id="drawer-loyalty-container"
+                style="display:flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; background: #f8fafc; border: 1px solid var(--border-color); padding: 1.25rem; border-radius: 12px;">
+                <!-- Solde de points et paliers -->
             </div>
 
             <!-- === SECTION ACTIONS MARKETING === -->
@@ -2004,10 +2086,13 @@
         let currentSegment = 'all';
         let currentCommerceId = 'commerce_local_1'; // Commerce actif
         let onlyAmbassadors = false; // Filtre par ambassadeurs actif/inactif
+        let onlyBaisse = false; // Filtre par baisse de fréquence actif/inactif (Option A)
+        let onlyCloseToPalier = false; // Filtre clients proches d'un palier de fidélité
 
         let segmentChart = null;
         let rfmChart = null;
         let churnChart = null;
+
 
         // Charger les données au démarrage
         document.addEventListener('DOMContentLoaded', () => {
@@ -2024,6 +2109,7 @@
                 // Charger les données : stats = toutes boutiques, clients = boutique sélectionnée
                 handleStatsCommerceChange(); // Charge toutes les boutiques pour Stats
                 fetchData(savedView);        // Charge la boutique active pour Clients
+                fetchReturnRate('__all__');  // Charge le taux de retour (Option A)
             });
             lucide.createIcons();
         });
@@ -2096,6 +2182,8 @@
                     updateChurnAlerts(allClients);
                     updateAmbassadorAlerts(allClients);
                     updateChatbotAlerts();
+                    fetchReturnRate('__all__'); // Option A
+                    fetchRecommendations('__all__');
                 } catch (e) {
                     showToast('Erreur lors du chargement global.', 'error');
                 }
@@ -2109,6 +2197,8 @@
                 if (statsSelector && statsSelector.value !== '__all__') statsSelector.value = currentCommerceId;
 
                 fetchData();
+                fetchReturnRate(currentCommerceId); // Option A
+                fetchRecommendations(currentCommerceId);
             }
         }
 
@@ -2145,6 +2235,8 @@
                     updateChurnAlerts(allClients);
                     updateAmbassadorAlerts(allClients);
                     updateChatbotAlerts();
+                    fetchReturnRate('__all__'); // Option A
+                    fetchRecommendations('__all__');
                 } catch (e) {
                     showToast('Erreur lors du chargement global.', 'error');
                 }
@@ -2158,6 +2250,8 @@
                 if (clientSelector) clientSelector.value = currentCommerceId;
 
                 fetchData();
+                fetchReturnRate(currentCommerceId); // Option A
+                fetchRecommendations(currentCommerceId);
             }
         }
 
@@ -2526,6 +2620,11 @@
                 const ambassadeurBadge = scoreInfluence >= 80 ? 
                     `<span class="ambassadeur-badge" style="background: linear-gradient(135deg, #eab308, #ca8a04); color: white; padding: 2px 6px; border-radius: 6px; font-size: 0.65rem; font-weight: 700; margin-left: 0.5rem; display: inline-flex; align-items: center; gap: 2px; vertical-align: middle; box-shadow: 0 2px 6px rgba(202,138,4,0.25);">👑 Ambassadeur</span>` : '';
 
+                // Badge baisse de fréquence (Option A)
+                const baisseVal = client.delta_frequence !== undefined ? client.delta_frequence : null;
+                const baisseBadge = client.baisse_frequence_detectee === true ?
+                    `<span class="baisse-frequence-badge" title="Baisse de fréquence d'achat détectée" style="background: rgba(239,68,68,0.12); color: #dc2626; border: 1px solid rgba(239,68,68,0.3); padding: 2px 6px; border-radius: 6px; font-size: 0.65rem; font-weight: 700; margin-left: 0.4rem; display: inline-flex; align-items: center; gap: 2px; vertical-align: middle;">📉 ${baisseVal !== null ? Math.round(Math.abs(baisseVal) * 100) + '%' : 'Baisse'}</span>` : '';
+
                 // Formater la probabilité GMM si disponible
                 const probaStr = client.probability_gmm ?
                     `<div style="font-size:0.75rem; color:var(--text-secondary); margin-top:4px; font-weight:500;">
@@ -2535,7 +2634,7 @@
                 tr.innerHTML = `
                     <td>
                         <div class="client-info">
-                            <span class="client-name">${client.nom} ${ambassadeurBadge}</span>
+                            <span class="client-name">${client.nom} ${ambassadeurBadge} ${baisseBadge}</span>
                             <span class="client-email">${client.email}</span>
                         </div>
                     </td>
@@ -2582,6 +2681,11 @@
             const query = document.getElementById('search-input').value.toLowerCase().trim();
             const churnFilter = document.getElementById('churn-filter').value;
 
+            // Filtre Période : recency = nb jours depuis le dernier achat
+            const periodSelect = document.getElementById('period-filter-fictif');
+            const periodVal = periodSelect ? periodSelect.value : 'all';
+            const maxRecency = periodVal === 'all' ? Infinity : parseInt(periodVal, 10);
+
             filteredClients = allClients.filter(c => {
                 // Recherche par nom ou email
                 const matchesSearch = c.nom.toLowerCase().includes(query) || c.email.toLowerCase().includes(query);
@@ -2603,11 +2707,45 @@
                     matchesAmbassador = scoreInfluence >= 80;
                 }
 
-                return matchesSearch && matchesSegment && matchesChurn && matchesAmbassador;
+                // Filtrage par baisse de fréquence (Option A)
+                const matchesBaisse = !onlyBaisse || c.baisse_frequence_detectee === true;
+
+                // Filtrage par période (recency = jours depuis dernier achat)
+                const matchesPeriod = (c.recency !== undefined && c.recency !== null)
+                    ? c.recency <= maxRecency
+                    : true; // si recency absent, on inclut le client
+
+                // Filtrage proche d'un palier (recommandations)
+                // Seuils : 100 (FID10) et 200 (FID20)
+                let matchesCloseToPalier = true;
+                if (onlyCloseToPalier) {
+                    const pts = c.points_cumules || 0;
+                    matchesCloseToPalier = (pts >= 80 && pts < 100) || (pts >= 180 && pts < 200);
+                }
+
+                return matchesSearch && matchesSegment && matchesChurn && matchesAmbassador && matchesBaisse && matchesPeriod && matchesCloseToPalier;
             });
 
             renderTable(filteredClients);
             document.getElementById('filtered-count').innerText = filteredClients.length;
+
+            // Mettre à jour l'apparence du sélecteur de période
+            if (periodSelect) {
+                if (periodVal !== 'all') {
+                    periodSelect.style.borderColor = 'var(--primary)';
+                    periodSelect.style.color = 'var(--primary)';
+                    periodSelect.style.fontWeight = '700';
+                } else {
+                    periodSelect.style.borderColor = 'var(--border-color)';
+                    periodSelect.style.color = 'var(--text-primary)';
+                    periodSelect.style.fontWeight = '600';
+                }
+            }
+        }
+
+        // Alias pour le sélecteur de période (appelé par onchange)
+        function handlePeriodChange() {
+            handleFilterAndSearch();
         }
 
         // Activer / Désactiver le filtre des ambassadeurs
@@ -2624,6 +2762,26 @@
                 btn.style.color = '#ca8a04';
                 btn.style.borderColor = 'var(--border-color)';
                 btn.style.boxShadow = 'none';
+            }
+            handleFilterAndSearch();
+        }
+
+        // Activer / Désactiver le filtre des clients avec baisse de fréquence (Option A)
+        function toggleBaisseFilter() {
+            onlyBaisse = !onlyBaisse;
+            const btn = document.getElementById('baisse-filter-btn');
+            if (btn) {
+                if (onlyBaisse) {
+                    btn.style.background = 'linear-gradient(135deg, #f87171, #dc2626)';
+                    btn.style.color = '#ffffff';
+                    btn.style.borderColor = '#dc2626';
+                    btn.style.boxShadow = '0 2px 8px rgba(220,38,38,0.25)';
+                } else {
+                    btn.style.background = '#ffffff';
+                    btn.style.color = '#dc2626';
+                    btn.style.borderColor = 'var(--border-color)';
+                    btn.style.boxShadow = 'none';
+                }
             }
             handleFilterAndSearch();
         }
@@ -2767,14 +2925,6 @@
 
         // Ouvrir le drawer et charger les transactions
         function openClientDrawer(id, name, email, commerceIdOverride) {
-            document.getElementById('drawer-client-name').innerText = name;
-            document.getElementById('drawer-client-email').innerText = email;
-
-            // Stocker les infos du client courant pour les fonctions de campagne
-            currentDrawerId = id;
-            currentDrawerName = name;
-            currentDrawerEmail = email;
-
             // Trouver le client dans allClients pour récupérer son commerce_id réel
             // Priorité : match exact par client_db_id ET commerce_id override, puis par email + commerce_id, puis par email seul
             const findClient = (overrideId) => {
@@ -2790,6 +2940,25 @@
                 return allClients.find(c => c.email && c.email.toLowerCase() === email.toLowerCase());
             };
             const clientData = findClient(commerceIdOverride);
+
+            // Gérer l'affichage du badge RGPD opt-out
+            const rgpdBadge = document.getElementById('drawer-client-rgpd-badge');
+            if (rgpdBadge) {
+                if (clientData && clientData.rgpd_opt_out === true) {
+                    rgpdBadge.style.display = 'inline-block';
+                } else {
+                    rgpdBadge.style.display = 'none';
+                }
+            }
+
+            document.getElementById('drawer-client-name').innerText = name;
+            document.getElementById('drawer-client-email').innerText = email;
+
+            // Stocker les infos du client courant pour les fonctions de campagne
+            currentDrawerId = id;
+            currentDrawerName = name;
+            currentDrawerEmail = email;
+
             const clientRealCommerceId = clientData && clientData.commerce_id ? clientData.commerce_id : null;
 
             // Priorité : override (depuis alerte) > commerce_id du client > commerce actif (sauf __all__)
@@ -2958,6 +3127,9 @@
             // Charger les détails du parrainage du client
             // On utilise effectiveCommerceId déjà calculé ci-dessus
             loadClientReferralDetail(email, effectiveCommerceId || currentCommerceId);
+
+            // Charger le solde de points de fidélité (Option A)
+            loadClientLoyaltyDetail(email, effectiveCommerceId || currentCommerceId);
 
             // Appel API REST — utilise le commerce_id effectif du client
             fetch(`/api/transactions/${encodeURIComponent(id)}?commerce_id=${encodeURIComponent(effectiveCommerceId)}`)
@@ -3595,6 +3767,14 @@
                 segment: c.segment_gmm || 'unknown'
             }));
 
+            // Préparer les filtres de ciblage à envoyer au backend
+            const activeFilters = {
+                onlyBaisse: onlyBaisse,
+                onlyAmbassadors: onlyAmbassadors,
+                segment_gmm: currentSegment,
+                close_to_palier: onlyCloseToPalier
+            };
+
             fetch('/api/campaigns/send-group', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -3602,7 +3782,8 @@
                     clients: clientsToSend,
                     subject,
                     body,
-                    commerce_id: currentCommerceId
+                    commerce_id: currentCommerceId,
+                    filters: activeFilters
                 })
             })
                 .then(res => res.json())
@@ -3625,6 +3806,100 @@
                     lucide.createIcons();
                     showToast('Erreur réseau.', 'error');
                 });
+        }
+
+        async function fetchRecommendations(commerceId) {
+            const container = document.getElementById('ai-recommendations-container');
+            const list = document.getElementById('ai-recommendations-list');
+            if (!container || !list) return;
+
+            // Masquer par défaut s'il s'agit du filtre global "Toutes les boutiques"
+            // (les recommandations s'appliquent à une boutique spécifique)
+            if (commerceId === '__all__') {
+                container.style.display = 'none';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/recommendations?commerce_id=${encodeURIComponent(commerceId)}`);
+                const json = await res.json();
+                if (json.status === 'success' && json.count > 0) {
+                    list.innerHTML = json.data.map(rec => {
+                        let colorBorder = '#bfdbfe';
+                        let colorBg = '#eff6ff';
+                        let badgeColor = '#3b82f6';
+                        
+                        if (rec.type === 'warning') {
+                            colorBorder = '#fbcfe8';
+                            colorBg = '#fdf2f8';
+                            badgeColor = '#db2777';
+                        } else if (rec.type === 'alert') {
+                            colorBorder = '#fca5a5';
+                            colorBg = '#fef2f2';
+                            badgeColor = '#dc2626';
+                        }
+
+                        // Convertir en JSON string pour l'action bouton
+                        const filtersStr = JSON.stringify(rec.action.filters).replace(/"/g, '&quot;');
+
+                        return `
+                            <div style="background: ${colorBg}; border: 1px solid ${colorBorder}; border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.01);">
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem;">
+                                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ${badgeColor};"></span>
+                                        <h5 style="margin: 0; font-size: 0.88rem; font-weight: 700; color: #1e293b; font-family: 'Outfit', sans-serif;">${rec.title}</h5>
+                                    </div>
+                                    <p style="margin: 0; font-size: 0.8rem; color: #475569; line-height: 1.45;">${rec.message}</p>
+                                </div>
+                                <button class="tab-btn" onclick="applyRecommendationAction('${rec.action.label}', '${filtersStr}')" 
+                                    style="align-self: flex-start; margin-top: 0.5rem; font-size: 0.76rem; padding: 0.35rem 0.75rem; border-radius: 8px; background: #ffffff; border: 1px solid ${colorBorder}; color: ${badgeColor}; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                                    ${rec.action.label}
+                                </button>
+                            </div>
+                        `;
+                    }).join('');
+                    container.style.display = 'block';
+                    lucide.createIcons();
+                } else {
+                    container.style.display = 'none';
+                }
+            } catch (e) {
+                console.error('Erreur de chargement des recommandations IA:', e);
+                container.style.display = 'none';
+            }
+        }
+
+        function applyRecommendationAction(label, filtersStr) {
+            const filters = JSON.parse(filtersStr);
+            
+            // 1. Basculer vers la vue Clients
+            switchView('clients');
+
+            // 2. Réinitialiser les filtres à l'écran
+            document.getElementById('search-input').value = '';
+            document.getElementById('churn-filter').value = 'all';
+            
+            // Décocher/désactiver les filtres Ambassadeur et Baisse de fréquence par défaut
+            if (onlyAmbassadors) toggleAmbassadorFilter();
+            if (onlyBaisse) toggleBaisseFilter();
+            onlyCloseToPalier = false;
+
+            // 3. Appliquer le filtre de la recommandation
+            if (filters.onlyBaisse) {
+                toggleBaisseFilter(); // active la baisse de fréquence
+            }
+            if (filters.segment_gmm) {
+                filterSegment(filters.segment_gmm); // active le segment (ex: regular)
+            }
+            if (filters.close_to_palier) {
+                onlyCloseToPalier = true;
+                handleFilterAndSearch();
+            }
+
+            // 4. Ouvrir le modal d'envoi de campagne groupée après un léger délai
+            setTimeout(() => {
+                openGroupCampaignModal();
+            }, 300);
         }
 
         function triggerSmartAutomation() {
@@ -3687,7 +3962,11 @@
                     { label: 'Ambassadeurs 👑', icon: 'crown', key: 'ambassador_count', fmt: v => v + ' ambassadeurs', higher: true, color: '#ca8a04' },
                     { label: 'Score Fidélité (Sa)', icon: 'star', key: 'score_sa_moyen_pct', fmt: v => v + '%', higher: true, color: '#f59e0b' },
                     { label: 'Taux de Churn (IA)', icon: 'flame', key: 'churn_moyen_pct', fmt: v => v + '%', higher: false, isChurn: true, color: '#ef4444' },
-                    { label: 'Panier Moyen', icon: 'shopping-cart', key: 'panier_moyen', fmt: v => v.toFixed(2) + ' DT', higher: true, color: '#06b6d4' }
+                    { label: 'Panier Moyen', icon: 'shopping-cart', key: 'panier_moyen', fmt: v => v.toFixed(2) + ' DT', higher: true, color: '#06b6d4' },
+                    { label: 'Taux de Retour Client', icon: 'undo-2', key: 'taux_retour_pct', fmt: v => v.toFixed(1) + '%', higher: false, color: '#ec4899' },
+                    { label: 'Baisse de Fréquence 📉', icon: 'trending-down', key: 'baisse_freq_count', fmt: v => v + ' clients', higher: false, color: '#ef4444' },
+                    { label: 'Membres Fidélité 🎁', icon: 'gift', key: 'loyalty_membres', fmt: v => v + ' membres', higher: true, color: '#8b5cf6' },
+                    { label: 'Points de Fidélité', icon: 'award', key: 'loyalty_points', fmt: v => v.toLocaleString('fr-FR') + ' pts', higher: true, color: '#6366f1' }
                 ];
 
                 const storeColors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899'];
@@ -3748,12 +4027,21 @@
                 // --- Graphique Comparatif ---
                 const barCtx = document.getElementById('global-bar-chart').getContext('2d');
                 if (globalBarChart) globalBarChart.destroy();
-                const barLabels = ['CA Total (kDT)', 'Fidélité Sa (%)', 'Taux de Churn (%)', 'Panier Moyen (DT)', 'Ambassadeurs 👑'];
+                const barLabels = ['CA Total (kDT)', 'Fidélité Sa (%)', 'Taux de Churn (%)', 'Panier Moyen (DT)', 'Ambassadeurs 👑', 'Taux de Retour (%)', 'Baisse Fréquence (cl)', 'Membres Fidélité'];
                 const barDatasets = stores.map((s, idx) => {
                     const col = storeColors[idx % storeColors.length];
                     return {
                         label: s.label,
-                        data: [s.ca_total / 1000, s.score_sa_moyen_pct, s.churn_moyen_pct, s.panier_moyen, s.ambassador_count || 0],
+                        data: [
+                            s.ca_total / 1000, 
+                            s.score_sa_moyen_pct, 
+                            s.churn_moyen_pct, 
+                            s.panier_moyen, 
+                            s.ambassador_count || 0,
+                            s.taux_retour_pct || 0,
+                            s.baisse_freq_count || 0,
+                            s.loyalty_membres || 0
+                        ],
                         backgroundColor: col + 'd0',
                         borderColor: col,
                         borderWidth: 1.5,
@@ -4417,9 +4705,217 @@
         }
 
         // ============================================================
+        // Option A — Taux de retour client (Tr) : KPI Card
+        // ============================================================
+        async function fetchReturnRate(commerceId) {
+            const cardEl = document.getElementById('kpi-return-rate-card');
+            const valEl  = document.getElementById('kpi-return-rate');
+            const subEl  = document.getElementById('kpi-return-rate-subtext');
+            if (!valEl) return;
+
+            // Affichage « chargement »
+            valEl.innerText = '...';
+
+            try {
+                let url = '';
+                if (!commerceId || commerceId === '__all__') {
+                    // Agrégation : on fait la moyenne des taux de toutes les boutiques
+                    const commercesRes = await fetch('/api/commerces');
+                    const commerces = await commercesRes.json();
+                    if (!commerces || commerces.length === 0) {
+                        valEl.innerText = 'N/A';
+                        if (subEl) subEl.innerText = 'Aucune boutique trouvée.';
+                        return;
+                    }
+
+                    const fetches = commerces.map(c =>
+                        fetch(`/api/kpis/return-rate?commerce_id=${encodeURIComponent(c.id)}`)
+                            .then(r => r.json())
+                            .catch(() => null)
+                    );
+                    const results = await Promise.all(fetches);
+                    // L'API retourne { status, data: { taux_retour_30j, ... } }
+                    const valid = results.filter(r => r && r.data && r.data.taux_retour_30j !== undefined);
+
+                    if (valid.length === 0) {
+                        valEl.innerText = 'N/A';
+                        if (subEl) subEl.innerText = 'Aucune donnée disponible.';
+                        return;
+                    }
+
+                    // taux_retour_30j est déjà en % (ex: 59.18)
+                    const avgTaux = valid.reduce((sum, r) => sum + r.data.taux_retour_30j, 0) / valid.length;
+                    const totalActifs = valid.reduce((sum, r) => sum + (r.data.clients_actifs_30j || 0), 0);
+                    const totalRevenus = valid.reduce((sum, r) => sum + (r.data.clients_revenus_30j || 0), 0);
+
+                    valEl.innerText = avgTaux.toFixed(1) + '%';
+                    if (subEl) subEl.innerText = `${totalRevenus} clients revenus sur ${totalActifs} actifs (30j) — ${valid.length} boutiques`;
+                    if (cardEl) {
+                        cardEl.style.borderLeft = `4px solid ${avgTaux >= 50 ? '#10b981' : avgTaux >= 30 ? '#f59e0b' : '#ef4444'}`;
+                    }
+
+                } else {
+                    url = `/api/kpis/return-rate?commerce_id=${encodeURIComponent(commerceId)}`;
+                    const res = await fetch(url);
+                    const data = await res.json();
+
+                    if (data.error) {
+                        valEl.innerText = 'N/A';
+                        if (subEl) subEl.innerText = data.error;
+                        return;
+                    }
+
+                    // Unwrap envelope { status, data: { ... } }
+                    const kpi = data.data || data;
+                    // taux_retour_30j est déjà en % (ex: 59.18)
+                    const taux = kpi.taux_retour_30j || 0;
+                    valEl.innerText = taux.toFixed(1) + '%';
+                    if (subEl) subEl.innerText = `${kpi.clients_revenus_30j} clients revenus sur ${kpi.clients_actifs_30j} actifs (30j)`;
+                    if (cardEl) {
+                        cardEl.style.borderLeft = `4px solid ${taux >= 50 ? '#10b981' : taux >= 30 ? '#f59e0b' : '#ef4444'}`;
+                    }
+                }
+            } catch (e) {
+                console.error('fetchReturnRate error:', e);
+                valEl.innerText = 'Erreur';
+                if (subEl) subEl.innerText = 'Impossible de charger le taux de retour.';
+            }
+        }
+
+        // ============================================================
+        // Option A — Points de fidélité (Drawer)
+        // ============================================================
+        async function loadClientLoyaltyDetail(email, commerceId) {
+            const titleEl     = document.getElementById('drawer-loyalty-title');
+            const containerEl = document.getElementById('drawer-loyalty-container');
+            if (!containerEl || !titleEl) return;
+
+            // Afficher en chargement
+            titleEl.style.display = 'flex';
+            containerEl.style.display = 'flex';
+            containerEl.innerHTML = `
+                <div style="display:flex; align-items:center; justify-content:center; padding:1.25rem; gap:0.5rem; color:var(--text-secondary);">
+                    <div class="spinner" style="width: 18px; height: 18px; border-width: 2px;"></div>
+                    <span style="font-size: 0.85rem;">Chargement des points de fidélité...</span>
+                </div>
+            `;
+
+            try {
+                const res = await fetch(`/api/loyalty/balance/${encodeURIComponent(email)}?commerce_id=${encodeURIComponent(commerceId)}`);
+                const envelope = await res.json();
+
+                // L'API retourne { status, data: { points_cumules, paliers: [...] } }
+                const data = envelope.data || envelope;
+
+                if (envelope.error || !data || data.status === 'not_found') {
+                    titleEl.style.display = 'flex';
+                    containerEl.innerHTML = `
+                        <div style="text-align:center; padding:1.1rem; color:var(--text-secondary); font-size:0.85rem;">
+                            <i data-lucide="gift" style="width:20px; height:20px; color:#94a3b8; margin:0 auto 0.5rem; display:block;"></i>
+                            Aucun point de fidélité enregistré.<br>
+                            <span style="font-size:0.78rem;">Ce client n'a pas encore de transactions comptabilisées.</span>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                    return;
+                }
+
+                const cumules     = data.points_cumules    || 0;
+                const disponibles = data.points_disponibles || 0;
+                const utilises    = data.points_utilises   || 0;
+
+                // Paliers depuis l'API : [{ code, points_requis, debloque, notifie }]
+                const apiPaliers = data.paliers || [];
+                const paliersMeta = {
+                    'FID10':  { color: '#10b981', icon: '🥉', label: '-10% sur votre prochain achat' },
+                    'FID20':  { color: '#3b82f6', icon: '🥈', label: '-20% sur votre prochain achat' },
+                    'FIDVIP': { color: '#7c3aed', icon: '💎', label: 'Statut VIP + avantages exclusifs' }
+                };
+
+                // Trouver le palier le plus haut débloqué
+                const palierActif = [...apiPaliers].reverse().find(p => p.debloque);
+                // Prochain palier non encore débloqué (le premier non débloqué trié par points_requis)
+                const prochainPalier = apiPaliers.find(p => !p.debloque);
+
+                let palierHtml = '';
+                if (palierActif) {
+                    const meta = paliersMeta[palierActif.code] || { color: '#6366f1', icon: '⭐', label: palierActif.label || palierActif.code };
+                    palierHtml = `
+                        <div style="display:flex; align-items:center; gap:0.5rem; background:${meta.color}1a; border:1px solid ${meta.color}40; border-radius:8px; padding:0.5rem 0.75rem; margin-top:0.5rem;">
+                            <span style="font-size:1rem;">${meta.icon}</span>
+                            <div>
+                                <div style="font-weight:700; font-size:0.85rem; color:${meta.color};">Palier débloqué : <code>${palierActif.code}</code></div>
+                                <div style="font-size:0.75rem; color:var(--text-secondary);">${meta.label}</div>
+                            </div>
+                        </div>
+                    `;
+                } else if (prochainPalier) {
+                    const manque = (prochainPalier.points_requis || 0) - cumules;
+                    palierHtml = `
+                        <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.4rem; padding:0.4rem 0.6rem; background:#f8fafc; border-radius:6px; border:1px solid var(--border-color);">
+                            ⏳ Prochain palier <strong>${prochainPalier.code}</strong> dans <strong>${Math.max(0, manque)} pts</strong>
+                        </div>
+                    `;
+                }
+
+                // Barre de progression vers prochain palier
+                let progressHtml = '';
+                if (prochainPalier) {
+                    const prevSeuil = palierActif ? (palierActif.points_requis || 0) : 0;
+                    const nextSeuil = prochainPalier.points_requis || 100;
+                    const pct = Math.min(100, Math.max(0, Math.round(((cumules - prevSeuil) / (nextSeuil - prevSeuil)) * 100)));
+                    progressHtml = `
+                        <div style="margin-top:0.5rem;">
+                            <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:var(--text-secondary); margin-bottom:3px;">
+                                <span>${cumules} pts</span><span>${nextSeuil} pts</span>
+                            </div>
+                            <div style="height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden;">
+                                <div style="width:${pct}%; height:100%; background:linear-gradient(90deg,#6366f1,#8b5cf6); border-radius:3px; transition:width 0.4s ease;"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                containerEl.innerHTML = `
+                    <div style="display:flex; flex-direction:column; gap:0.4rem; width:100%;">
+                        <div style="display:flex; justify-content:space-around; text-align:center; background:#f8fafc; border:1px solid var(--border-color); border-radius:10px; padding:0.75rem;">
+                            <div>
+                                <div style="font-size:1.4rem; font-weight:800; color:#6366f1;">${cumules}</div>
+                                <div style="font-size:0.7rem; color:var(--text-secondary); font-weight:500;">Cumulés</div>
+                            </div>
+                            <div style="width:1px; background:var(--border-color);"></div>
+                            <div>
+                                <div style="font-size:1.4rem; font-weight:800; color:#10b981;">${disponibles}</div>
+                                <div style="font-size:0.7rem; color:var(--text-secondary); font-weight:500;">Disponibles</div>
+                            </div>
+                            <div style="width:1px; background:var(--border-color);"></div>
+                            <div>
+                                <div style="font-size:1.4rem; font-weight:800; color:#94a3b8;">${utilises}</div>
+                                <div style="font-size:0.7rem; color:var(--text-secondary); font-weight:500;">Utilisés</div>
+                            </div>
+                        </div>
+                        ${progressHtml}
+                        ${palierHtml}
+                    </div>
+                `;
+                lucide.createIcons();
+
+            } catch (e) {
+                console.error('loadClientLoyaltyDetail error:', e);
+                containerEl.innerHTML = `
+                    <div style="text-align:center; padding:1rem; color:var(--text-secondary); font-size:0.82rem;">
+                        Impossible de charger les points de fidélité.
+                    </div>
+                `;
+            }
+        }
+
+
+        // ============================================================
         // Chargement et rendu des parrainages et fidélisation
         // ============================================================
         async function loadClientReferralDetail(email, commerceId) {
+
             const titleEl = document.getElementById('drawer-referral-title');
             const containerEl = document.getElementById('drawer-referral-container');
             if (!containerEl || !titleEl) return;

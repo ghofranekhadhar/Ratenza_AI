@@ -1,10 +1,116 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
 from config import DEFAULT_WR, DEFAULT_WF, DEFAULT_WM
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def calculate_frequency_delta(transactions_df: pd.DataFrame, ref_date: datetime = None) -> pd.DataFrame:
+    """
+    Calcule la variation de fréquence d'achat (Δ) pour chaque client.
+
+    Méthode :
+        - Période récente    : 30 derniers jours avant ref_date.
+        - Période historique : les 90 jours précédant la période récente (J-121 à J-31).
+        - Δ = (freq_recente - freq_historique) / freq_historique
+        - Si Δ < -0.25 (baisse > 25%) → baisse_frequence_detectee = True.
+
+    Règle anti-chevauchement avec GMM/Churn (appliquée en aval dans le moteur) :
+        Le flag 'baisse_frequence_detectee' est uniquement utilisé pour déclencher
+        une campagne si aucune règle GMM/Churn plus prioritaire ne s'applique déjà.
+        Cette fonction calcule UNIQUEMENT le signal ; la décision de campagne est
+        prise dans rfmController.js.
+
+    Args:
+        transactions_df : DataFrame des transactions avec colonnes 'client_id'/'email',
+                          'date_transaction', et optionnellement 'montant'.
+        ref_date        : Date de référence (par défaut : aujourd'hui).
+
+    Returns:
+        DataFrame avec colonnes :
+            - client_id             : identifiant du client
+            - freq_recente          : nombre de transactions dans les 30 derniers jours
+            - freq_historique       : nombre de transactions moyen/mois dans les 90 jours précédents
+            - delta_frequence       : Δ (float, ex: -0.35 pour -35%)
+            - baisse_frequence_detectee : True si Δ < -0.25
+            - date_calcul_delta     : date du calcul (ISO string)
+    """
+    if ref_date is None:
+        ref_date = datetime.now()
+
+    if transactions_df.empty:
+        logger.warning("[FreqDelta] DataFrame des transactions vide — calcul delta ignoré.")
+        return pd.DataFrame(columns=[
+            "client_id", "freq_recente", "freq_historique",
+            "delta_frequence", "baisse_frequence_detectee", "date_calcul_delta"
+        ])
+
+    tx_df = transactions_df.copy()
+    tx_df["date_transaction"] = pd.to_datetime(tx_df["date_transaction"]).dt.tz_localize(None)
+    ref_date = pd.to_datetime(ref_date).tz_localize(None)
+
+    # Bornes de la fenêtre temporelle
+    recent_start    = ref_date - timedelta(days=30)     # J-30 → J (période récente)
+    historic_start  = ref_date - timedelta(days=120)    # J-120 → J-31 (3 mois précédents)
+    historic_end    = ref_date - timedelta(days=31)
+
+    # Grouper par email ou client_id
+    group_col = "email" if "email" in tx_df.columns else "client_id"
+
+    records = []
+    date_calcul = ref_date.isoformat()
+
+    for client_id, group in tx_df.groupby(group_col):
+        dates = group["date_transaction"]
+
+        # Fréquence récente : comptage brut sur 30 jours
+        freq_recente = int(dates[
+            (dates >= recent_start) & (dates <= ref_date)
+        ].count())
+
+        # Fréquence historique : comptage sur 90 jours divisé par 3 pour ramener au mois
+        count_historique = int(dates[
+            (dates >= historic_start) & (dates <= historic_end)
+        ].count())
+        # Ramenée en fréquence mensuelle moyenne (diviser par 3 mois)
+        freq_historique = round(count_historique / 3.0, 4)
+
+        # Calcul du Δ (éviter la division par zéro)
+        if freq_historique > 0:
+            delta = round((freq_recente - freq_historique) / freq_historique, 4)
+        elif freq_recente == 0:
+            # Pas d'activité du tout sur les 4 derniers mois → neutre
+            delta = 0.0
+        else:
+            # Nouveau client sans historique → pas de signal de baisse
+            delta = 0.0
+
+        baisse_detectee = bool(delta < -0.25)
+
+        records.append({
+            "client_id": client_id,
+            "freq_recente": freq_recente,
+            "freq_historique": freq_historique,
+            "delta_frequence": delta,
+            "baisse_frequence_detectee": baisse_detectee,
+            "date_calcul_delta": date_calcul
+        })
+
+        if baisse_detectee:
+            logger.info(
+                f"[FreqDelta] ⚠️  Baisse détectée — {client_id} : "
+                f"Δ={delta*100:.1f}% (récent={freq_recente}, historique≈{freq_historique:.1f}/mois)"
+            )
+
+    df_delta = pd.DataFrame(records)
+    n_baisse = df_delta["baisse_frequence_detectee"].sum()
+    logger.info(
+        f"[FreqDelta] Calcul terminé : {len(df_delta)} clients analysés, "
+        f"{n_baisse} avec baisse de fréquence détectée (Δ < -25%)."
+    )
+    return df_delta
 
 def calculate_raw_rfm(transactions_df: pd.DataFrame, ref_date: datetime = None) -> pd.DataFrame:
     """
@@ -106,3 +212,74 @@ def normalize_rfm(rfm_df: pd.DataFrame, wr: float = DEFAULT_WR, wf: float = DEFA
     df["monetary_score"] = df["monetary_score"].round(4)
     
     return df
+
+
+def calculate_return_rate(transactions_df: pd.DataFrame, ref_date: datetime = None) -> dict:
+    """
+    Calcule le Taux de Retour Client (Tr) sur les 30 derniers jours.
+
+    Méthode :
+        - Période active : 30 derniers jours (J-30 à J).
+        - Clients actifs : clients ayant fait au moins 1 achat sur cette période.
+        - Clients revenus : clients ayant fait au moins 2 achats sur cette période.
+        - Tr = (clients_revenus / clients_actifs) * 100
+
+    Args:
+        transactions_df : DataFrame des transactions.
+        ref_date        : Date de référence (par défaut : aujourd'hui).
+
+    Returns:
+        dict contenant les métriques calculées.
+    """
+    if ref_date is None:
+        ref_date = datetime.now()
+
+    if transactions_df.empty:
+        logger.warning("[ReturnRate] DataFrame vide. Taux de retour = 0%.")
+        return {
+            "taux_retour_30j": 0.0,
+            "clients_actifs_30j": 0,
+            "clients_revenus_30j": 0,
+            "date_calcul": ref_date.isoformat()
+        }
+
+    tx_df = transactions_df.copy()
+    tx_df["date_transaction"] = pd.to_datetime(tx_df["date_transaction"]).dt.tz_localize(None)
+    ref_date = pd.to_datetime(ref_date).tz_localize(None)
+
+    # Fenêtre des 30 derniers jours
+    recent_start = ref_date - timedelta(days=30)
+
+    # Filtrer les transactions sur les 30 derniers jours
+    tx_30j = tx_df[(tx_df["date_transaction"] >= recent_start) & (tx_df["date_transaction"] <= ref_date)]
+
+    if tx_30j.empty:
+        logger.info("[ReturnRate] Aucune transaction sur les 30 derniers jours. Taux de retour = 0%.")
+        return {
+            "taux_retour_30j": 0.0,
+            "clients_actifs_30j": 0,
+            "clients_revenus_30j": 0,
+            "date_calcul": ref_date.isoformat()
+        }
+
+    # Grouper par client pour compter ses transactions sur 30j
+    group_col = "email" if "email" in tx_30j.columns else "client_id"
+    counts = tx_30j.groupby(group_col).size()
+
+    clients_actifs = len(counts)
+    clients_revenus = int((counts >= 2).sum())
+
+    tr = round((clients_revenus / clients_actifs) * 100.0, 2) if clients_actifs > 0 else 0.0
+
+    logger.info(
+        f"[ReturnRate] Calcul Taux de Retour : {clients_revenus} revenus / {clients_actifs} actifs sur 30j "
+        f"-> Tr = {tr}%"
+    )
+
+    return {
+        "taux_retour_30j": tr,
+        "clients_actifs_30j": clients_actifs,
+        "clients_revenus_30j": clients_revenus,
+        "date_calcul": ref_date.isoformat()
+    }
+
