@@ -398,26 +398,38 @@ const runSmartAutomationInternal = async (commerceId) => {
     // 2. Déterminer la durée de cooldown au niveau MARQUE
     // (tous les points de vente de la même marque partagent le même réglage)
     let cooldownDays = 30;
+    let cooldownResetAt = null; // Date de la dernière réinitialisation manuelle du cooldown
     try {
         const brandId = commerceId.replace(/_\d+$/, ''); // ex: commerce_local_1 → commerce_local
         const settings = await db.collection('commerces_settings').findOne({ brand_id: brandId });
         if (settings && settings.cooldown_days !== undefined) {
             cooldownDays = parseFloat(settings.cooldown_days) || 30;
         }
-        console.log(`[SmartAutomation] Cooldown marque "${brandId}" : ${cooldownDays} jours`);
+        // Récupérer la date de réinitialisation manuelle si elle existe
+        if (settings && settings.cooldown_reset_at) {
+            cooldownResetAt = new Date(settings.cooldown_reset_at);
+        }
+        console.log(`[SmartAutomation] Cooldown marque "${brandId}" : ${cooldownDays} jours${cooldownResetAt ? ` | Réinitialisé le ${cooldownResetAt.toLocaleString('fr-FR')}` : ''}`);
     } catch (err) {
         console.warn(`[SmartAutomation] Impossible de lire les paramètres de cooldown, défaut 30j:`, err.message);
     }
 
     const cooldownMs = cooldownDays * 24 * 60 * 60 * 1000;
-    const thirtyDaysAgo = new Date(Date.now() - cooldownMs);
-    
-    // Récupérer les campagnes envoyées ces X derniers jours pour le cooldown anti-spam
+    const cooldownWindowStart = new Date(Date.now() - cooldownMs);
+
+    // Si une réinitialisation manuelle a eu lieu APRÈS la fenêtre de cooldown calculée,
+    // on utilise la date de reset comme borne inférieure (les emails avant le reset sont ignorés
+    // dans le calcul du cooldown, mais restent intacts dans la base).
+    const effectiveCooldownStart = (cooldownResetAt && cooldownResetAt > cooldownWindowStart)
+        ? cooldownResetAt
+        : cooldownWindowStart;
+
+    // Récupérer les campagnes envoyées depuis la borne effective pour le cooldown anti-spam
     // EXCLUSION INTENTIONNELLE : birthday_gift et ambassador_invite ne comptent PAS dans ce cooldown
     const recentCampaigns = await db.collection('campagnes_envoyees')
         .find({
             commerce_id: commerceId,
-            sent_at: { $gte: thirtyDaysAgo.toISOString() },
+            sent_at: { $gte: effectiveCooldownStart.toISOString() },
             category: { $nin: ['birthday_gift', 'ambassador_invite'] } // ces catégories ont leur propre anti-doublon
         })
         .toArray();
@@ -1095,19 +1107,30 @@ const updateCommerceSettings = async (req, res) => {
     const commerceId = commerce_id || COMMERCE_ID;
     const brandId = extractBrandId(commerceId);
     const days = parseFloat(cooldown_days) || 30;
+    // À chaque changement de sélecteur, on enregistre le timestamp exact du changement.
+    // La logique de cooldown utilisera ce timestamp pour ignorer les envois antérieurs,
+    // rendant tous les clients immédiatement éligibles — sans supprimer leur historique.
+    const resetAt = new Date().toISOString();
 
     try {
         const db = await connectDB();
         await db.collection('commerces_settings').updateOne(
             { brand_id: brandId },
-            { $set: { brand_id: brandId, cooldown_days: days, updated_at: new Date().toISOString() } },
+            { $set: {
+                brand_id: brandId,
+                cooldown_days: days,
+                cooldown_reset_at: resetAt,  // ← réinitialisation automatique à chaque changement
+                updated_at: resetAt
+            }},
             { upsert: true }
         );
+        console.log(`⚙️ [SETTINGS] Cooldown réinitialisé pour "${brandId}" à ${resetAt} (${days}j)`);
         return res.json({ 
             status: 'success', 
-            message: `Paramètres de la marque "${brandId}" mis à jour. Délai de relance réglé sur ${days} jours pour tous ses points de vente.`, 
+            message: `Paramètres de la marque "${brandId}" mis à jour. Délai de relance réglé sur ${days} jours. Tous les clients sont à nouveau éligibles.`, 
             brand_id: brandId,
-            cooldown_days: days 
+            cooldown_days: days,
+            cooldown_reset_at: resetAt
         });
     } catch (err) {
         console.error('❌ updateCommerceSettings error :', err.message);

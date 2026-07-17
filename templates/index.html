@@ -3892,6 +3892,7 @@
 
             const days = parseFloat(select.value);
             const targetId = currentCommerceId === '__all__' ? 'commerce_local' : currentCommerceId;
+            const selectedLabel = select.options[select.selectedIndex]?.text || `${days}j`;
 
             try {
                 const res = await fetch('/api/commerces/settings', {
@@ -3907,8 +3908,18 @@
                     status.style.display = 'inline';
                     setTimeout(() => {
                         status.style.display = 'none';
-                    }, 2000);
-                    showToast(json.message, 'success');
+                    }, 3000);
+
+                    // Toast principal : confirmation de la sauvegarde
+                    showToast(`✅ Relance automatique réglée sur ${selectedLabel}`, 'success');
+
+                    // Toast secondaire : confirmation de la réinitialisation du cooldown
+                    const resetTime = json.cooldown_reset_at
+                        ? new Date(json.cooldown_reset_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+                        : '';
+                    setTimeout(() => {
+                        showToast(`🔄 Cooldown réinitialisé à ${resetTime} — tous les clients sont à nouveau éligibles`, 'warning');
+                    }, 600);
                 } else {
                     showToast(json.error || 'Erreur lors de l\'enregistrement.', 'error');
                 }
