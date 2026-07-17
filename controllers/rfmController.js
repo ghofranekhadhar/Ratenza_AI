@@ -395,11 +395,25 @@ const runSmartAutomationInternal = async (commerceId) => {
     const campaignsToInsert = [];
     const stats = { ambassador_invite: 0, birthday_gift: 0, vip_danger: 0, vip: 0, regular: 0, baisse_frequence: 0, at_risk: 0, lost: 0, skipped_cooldown: 0 };
 
-    // 2. Récupérer les campagnes envoyées ces 30 derniers jours pour le cooldown anti-spam
-    //    EXCLUSION INTENTIONNELLE : birthday_gift et ambassador_invite ne comptent PAS dans ce cooldown
-    //    car ce sont des événements ponctuels ; un anniversaire ne doit pas bloquer une promotion et vice versa.
+    // 2. Déterminer la durée de cooldown au niveau MARQUE
+    // (tous les points de vente de la même marque partagent le même réglage)
+    let cooldownDays = 30;
+    try {
+        const brandId = commerceId.replace(/_\d+$/, ''); // ex: commerce_local_1 → commerce_local
+        const settings = await db.collection('commerces_settings').findOne({ brand_id: brandId });
+        if (settings && settings.cooldown_days !== undefined) {
+            cooldownDays = parseInt(settings.cooldown_days, 10) || 30;
+        }
+        console.log(`[SmartAutomation] Cooldown marque "${brandId}" : ${cooldownDays} jours`);
+    } catch (err) {
+        console.warn(`[SmartAutomation] Impossible de lire les paramètres de cooldown, défaut 30j:`, err.message);
+    }
+
     const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - cooldownDays);
+    
+    // Récupérer les campagnes envoyées ces X derniers jours pour le cooldown anti-spam
+    // EXCLUSION INTENTIONNELLE : birthday_gift et ambassador_invite ne comptent PAS dans ce cooldown
     const recentCampaigns = await db.collection('campagnes_envoyees')
         .find({
             commerce_id: commerceId,
@@ -989,6 +1003,70 @@ const optOutRGPD = async (req, res) => {
     }
 };
 
+// ============================================================
+// Helper : extraire l'ID de la marque à partir du commerce_id
+// Ex : commerce_local_1  →  commerce_local
+//      commerce_local_2  →  commerce_local
+//      boutique_paris    →  boutique_paris  (pas de numéro)
+// ============================================================
+const extractBrandId = (commerceId) => {
+    if (!commerceId) return commerceId;
+    return commerceId.replace(/_\d+$/, '');
+};
+
+// ============================================================
+// GET /api/commerces/settings?commerce_id=...
+// Récupère les paramètres de la MARQUE (tous ses points de vente
+// partagent le même réglage).
+// ============================================================
+const getCommerceSettings = async (req, res) => {
+    const commerceId = req.query.commerce_id || COMMERCE_ID;
+    const brandId = extractBrandId(commerceId); // ex: commerce_local
+    try {
+        const db = await connectDB();
+        let settings = await db.collection('commerces_settings').findOne({ brand_id: brandId });
+        if (!settings) {
+            settings = { brand_id: brandId, cooldown_days: 30 };
+        }
+        if (settings._id) settings._id = settings._id.toString();
+        return res.json({ status: 'success', data: settings });
+    } catch (err) {
+        console.error('❌ getCommerceSettings error :', err.message);
+        return res.status(500).json({ error: err.message });
+    }
+};
+
+// ============================================================
+// POST /api/commerces/settings
+// Enregistre les paramètres au niveau de la MARQUE.
+// Tous les points de vente de cette marque hériteront
+// automatiquement du même réglage.
+// ============================================================
+const updateCommerceSettings = async (req, res) => {
+    const { commerce_id, cooldown_days } = req.body || {};
+    const commerceId = commerce_id || COMMERCE_ID;
+    const brandId = extractBrandId(commerceId);
+    const days = parseInt(cooldown_days, 10) || 30;
+
+    try {
+        const db = await connectDB();
+        await db.collection('commerces_settings').updateOne(
+            { brand_id: brandId },
+            { $set: { brand_id: brandId, cooldown_days: days, updated_at: new Date().toISOString() } },
+            { upsert: true }
+        );
+        return res.json({ 
+            status: 'success', 
+            message: `Paramètres de la marque "${brandId}" mis à jour. Délai de relance réglé sur ${days} jours pour tous ses points de vente.`, 
+            brand_id: brandId,
+            cooldown_days: days 
+        });
+    } catch (err) {
+        console.error('❌ updateCommerceSettings error :', err.message);
+        return res.status(500).json({ error: err.message });
+    }
+};
+
 module.exports = { 
     getRFMData, 
     getClientTransactions, 
@@ -1002,6 +1080,8 @@ module.exports = {
     getGlobalComparison,
     getReturnRate,
     getRecommendations,
-    optOutRGPD
+    optOutRGPD,
+    getCommerceSettings,
+    updateCommerceSettings
 };
 

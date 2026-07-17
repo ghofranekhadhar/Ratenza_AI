@@ -12,7 +12,9 @@ const {
     getGlobalComparison,
     getReturnRate,
     getRecommendations,
-    optOutRGPD
+    optOutRGPD,
+    getCommerceSettings,
+    updateCommerceSettings
 } = require('../controllers/rfmController');
 
 const {
@@ -65,5 +67,11 @@ router.get('/recommendations', getRecommendations);
 
 // POST /api/rgpd/opt-out                 → Désactiver le ciblage marketing pour un client (RGPD)
 router.post('/rgpd/opt-out', optOutRGPD);
+
+// GET  /api/commerces/settings           → Récupérer les paramètres d'un commerce
+router.get('/commerces/settings', getCommerceSettings);
+
+// POST /api/commerces/settings          → Enregistrer les paramètres d'un commerce
+router.post('/commerces/settings', updateCommerceSettings);
 
 module.exports = router;
