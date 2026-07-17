@@ -465,14 +465,14 @@ const runSmartAutomationInternal = async (commerceId) => {
     const tomorrowDay = tomorrow.getUTCDate();
     const tomorrowMonth = tomorrow.getUTCMonth();
 
-    const promises = clients.map(async (client) => {
+    for (const client of clients) {
         const clientEmail = client.email || client.client_db_id;
-        if (!clientEmail) return;
+        if (!clientEmail) continue;
 
         // --- GARDE RGPD : exclure les clients ayant désactivé le ciblage marketing ---
         // NOTE : les e-mails transactionnels (confirmation commande, crédit points) ne passent
         // pas par cet automatiseur et ne sont donc pas affectés par ce garde.
-        if (rgpdOptOutSet.has(clientEmail.toLowerCase())) return;
+        if (rgpdOptOutSet.has(clientEmail.toLowerCase())) continue;
 
         const nomClient = client.nom || clientEmail || 'Client';
         const churnScore = client.churn_score || 0;
@@ -525,7 +525,7 @@ const runSmartAutomationInternal = async (commerceId) => {
                 body: campaignToSend.body, sent_at: sentAt, status, category: 'ambassador_invite',
                 influence_score: scoreInfluence, referral_code: client.referral_code || ''
             });
-            return; // Ne pas envoyer d'autre email ce cycle à cet ambassadeur
+            continue; // Ne pas envoyer d'autre email ce cycle à cet ambassadeur
         }
 
         // --- REGLE 1 : ANNIVERSAIRE (J-1) ---
@@ -549,14 +549,14 @@ const runSmartAutomationInternal = async (commerceId) => {
             // --- REGLE 2 : COOLDOWN ANTI-SPAM (30 jours) POUR LES AUTRES NOTIFICATIONS ---
             if (lastSentMap[clientEmail]) {
                 stats.skipped_cooldown++;
-                return;
+                continue;
             }
 
             // --- REGLE 3 : DÉCISIONS IA COMBINÉES (GMM + XGBOOST CHURN) ---
             let probs = client.probabilities_gmm;
             if (Array.isArray(probs)) probs = probs[0] || probs;
             
-            if (!probs || typeof probs !== 'object') return; // Passer si pas de GMM
+            if (!probs || typeof probs !== 'object') continue; // Passer si pas de GMM
 
             const pVip  = probs['vip'] || 0;
             const pRisk = (probs['at_risk'] || 0) + (probs['lost'] || 0);
@@ -674,9 +674,10 @@ const runSmartAutomationInternal = async (commerceId) => {
 
             console.log(`🤖 [AUTO IA] Décision: ${campaignToSend.category.toUpperCase()} | GMM: ${client.segment_gmm} | Churn: ${churnRiskLabel} (${(churnScore*100).toFixed(0)}%) | Statut: ${status} → ${nomClient}`);
         }
-    });
-
-    await Promise.all(promises);
+        
+        // Délai de 50ms entre chaque envoi pour soulager le serveur SMTP
+        await new Promise(resolve => setTimeout(resolve, 50));
+    }
 
     // 5. Sauvegarder massivement
     if (campaignsToInsert.length > 0) {
@@ -690,16 +691,63 @@ const runSmartAutomationInternal = async (commerceId) => {
     };
 };
 
+// État en mémoire de la dernière automatisation (pour le polling)
+const automationStatus = {
+    running: false,
+    lastResult: null,
+    lastError: null,
+    startedAt: null,
+    commerceId: null
+};
+
+// GET /api/campaigns/automation-status — Polling du statut de l'automatisation en cours
+const getAutomationStatus = (req, res) => {
+    return res.json({
+        status: 'success',
+        running: automationStatus.running,
+        startedAt: automationStatus.startedAt,
+        result: automationStatus.lastResult,
+        error: automationStatus.lastError
+    });
+};
+
 const triggerSmartAutomation = async (req, res) => {
     const commerceId = req.body.commerce_id || COMMERCE_ID;
 
-    try {
-        const result = await runSmartAutomationInternal(commerceId);
-        return res.json(result);
-    } catch (err) {
-        console.error('❌ triggerSmartAutomation error :', err.message);
-        return res.status(500).json({ error: err.message });
+    // Si une automatisation tourne déjà, on refuse
+    if (automationStatus.running) {
+        return res.status(409).json({
+            status: 'busy',
+            message: 'Une automatisation est déjà en cours. Veuillez patienter.',
+            startedAt: automationStatus.startedAt
+        });
     }
+
+    // Répondre IMMÉDIATEMENT au client — le bouton se débloque tout de suite
+    automationStatus.running = true;
+    automationStatus.lastResult = null;
+    automationStatus.lastError = null;
+    automationStatus.startedAt = new Date().toISOString();
+    automationStatus.commerceId = commerceId;
+
+    res.status(202).json({
+        status: 'started',
+        message: 'Automatisation IA lancée en arrière-plan. Vérifiez le statut dans quelques instants.',
+        startedAt: automationStatus.startedAt
+    });
+
+    // Exécuter l'automatisation EN ARRIÈRE-PLAN (après réponse HTTP)
+    runSmartAutomationInternal(commerceId)
+        .then(result => {
+            automationStatus.running = false;
+            automationStatus.lastResult = result;
+            console.log(`✅ [AUTO IA] Terminé : ${result.message}`);
+        })
+        .catch(err => {
+            automationStatus.running = false;
+            automationStatus.lastError = err.message;
+            console.error('❌ triggerSmartAutomation background error :', err.message);
+        });
 };
 
 // ============================================================
@@ -1075,6 +1123,7 @@ module.exports = {
     getClientCampaignHistory,
     sendGroupCampaign,
     triggerSmartAutomation,
+    getAutomationStatus,
     runSmartAutomationInternal,
     getCommerces,
     getGlobalComparison,

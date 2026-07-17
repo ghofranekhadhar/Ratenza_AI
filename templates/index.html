@@ -3979,6 +3979,8 @@
             }, 300);
         }
 
+        let _autoPollingInterval = null;
+
         function triggerSmartAutomation() {
             const btn = document.getElementById('btn-ai-auto');
 
@@ -3987,35 +3989,65 @@
             }
 
             btn.disabled = true;
-            btn.innerHTML = `<div class="spinner" style="width:16px;height:16px;border-width:2px; border-color:#fff transparent transparent transparent;"></div> IA en cours...`;
+            btn.innerHTML = `<div class="spinner" style="width:16px;height:16px;border-width:2px; border-color:#fff transparent transparent transparent;"></div> Lancement...`;
 
             fetch('/api/campaigns/trigger-automation', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ commerce_id: currentCommerceId })
             })
-                .then(res => res.json())
-                .then(data => {
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'busy') {
+                    showToast('⏳ ' + data.message, 'warning');
                     btn.disabled = false;
                     btn.innerHTML = `<i data-lucide="sparkles" style="width:16px;height:16px;"></i> Automatisation IA`;
                     lucide.createIcons();
+                    return;
+                }
 
-                    if (data.status === 'success') {
-                        const s = data.stats;
-                        const msg = `${data.message}\nAnniversaires: ${s.birthday_gift || 0} | VIP Sauvés: ${s.vip_danger} | VIP pur: ${s.vip} | Risque: ${s.at_risk} | Réguliers: ${s.regular} | Perdus: ${s.lost}`;
-                        showToast(data.message, 'success');
-                        setTimeout(() => alert(msg), 500);
-                    } else {
-                        showToast(data.error || 'Erreur lors de l\'automatisation.', 'error');
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    btn.disabled = false;
-                    btn.innerHTML = `<i data-lucide="sparkles" style="width:16px;height:16px;"></i> Automatisation IA`;
-                    lucide.createIcons();
-                    showToast('Erreur réseau.', 'error');
-                });
+                // Status 'started' → l'automatisation tourne en arrière-plan
+                // Démarrer un polling toutes les 3 secondes
+                let elapsed = 0;
+                if (_autoPollingInterval) clearInterval(_autoPollingInterval);
+                _autoPollingInterval = setInterval(async () => {
+                    elapsed += 3;
+                    btn.innerHTML = `<div class="spinner" style="width:16px;height:16px;border-width:2px; border-color:#fff transparent transparent transparent;"></div> IA en cours... (${elapsed}s)`;
+                    try {
+                        const sr = await fetch('/api/campaigns/automation-status');
+                        const sd = await sr.json();
+                        if (!sd.running) {
+                            clearInterval(_autoPollingInterval);
+                            btn.disabled = false;
+                            btn.innerHTML = `<i data-lucide="sparkles" style="width:16px;height:16px;"></i> Automatisation IA`;
+                            lucide.createIcons();
+                            if (sd.result && sd.result.status === 'success') {
+                                const s = sd.result.stats || {};
+                                showToast(sd.result.message, 'success');
+                                setTimeout(() => alert(
+                                    sd.result.message +
+                                    '\n\nAnniversaires: ' + (s.birthday_gift||0) +
+                                    ' | VIP Sauvés: ' + (s.vip_danger||0) +
+                                    ' | VIP pur: ' + (s.vip||0) +
+                                    ' | Risque: ' + (s.at_risk||0) +
+                                    ' | Réguliers: ' + (s.regular||0) +
+                                    ' | Perdus: ' + (s.lost||0) +
+                                    ' | Cooldown ignorés: ' + (s.skipped_cooldown||0)
+                                ), 400);
+                            } else if (sd.error) {
+                                showToast('❌ Erreur automatisation : ' + sd.error, 'error');
+                            }
+                        }
+                    } catch(e) { /* réseau momentanément indisponible */ }
+                }, 3000);
+            })
+            .catch(err => {
+                console.error(err);
+                btn.disabled = false;
+                btn.innerHTML = `<i data-lucide="sparkles" style="width:16px;height:16px;"></i> Automatisation IA`;
+                lucide.createIcons();
+                showToast('Erreur réseau.', 'error');
+            });
         }
 
         // ============================================================

@@ -8,6 +8,7 @@ const {
     getClientCampaignHistory,
     sendGroupCampaign,
     triggerSmartAutomation,
+    getAutomationStatus,
     getCommerces,
     getGlobalComparison,
     getReturnRate,
@@ -59,8 +60,11 @@ router.get('/campaigns/history/:email', getClientCampaignHistory);
 // POST /api/campaigns/send-group  → Envoyer un e-mail à tout un groupe
 router.post('/campaigns/send-group', sendGroupCampaign);
 
-// POST /api/campaigns/trigger-automation → Déclencher l'IA d'automatisation
+// POST /api/campaigns/trigger-automation → Déclencher l'IA d'automatisation (répond immédiatement)
 router.post('/campaigns/trigger-automation', triggerSmartAutomation);
+
+// GET  /api/campaigns/automation-status  → Statut de l'automatisation en cours (polling)
+router.get('/campaigns/automation-status', getAutomationStatus);
 
 // GET  /api/recommendations              → Recommandations IA rule-based pour une boutique
 router.get('/recommendations', getRecommendations);
