@@ -1520,13 +1520,32 @@
                     <div class="stats-section-subtitle">Indicateurs clés de performance et analyses comportementales
                     </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;">
                     <!-- Filtre Boutique dans Stats -->
-                    <select id="stats-commerce-selector" class="commerce-select" onchange="handleStatsCommerceChange()"
-                        style="padding: 0.5rem 2.2rem 0.5rem 0.85rem; font-size: 0.85rem; border-radius: 10px; flex-shrink: 0;">
-                        <option value="__all__"> Toutes les boutiques</option>
-                    </select>
-                    <div class="stats-timestamp">
+                    <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                        <span style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Boutique</span>
+                        <select id="stats-commerce-selector" class="commerce-select" onchange="handleStatsCommerceChange()"
+                            style="padding: 0.42rem 2.2rem 0.42rem 0.85rem; font-size: 0.82rem; border-radius: 9px; flex-shrink: 0; min-width: 170px; border-color: var(--border-color); box-shadow: none;">
+                            <option value="__all__"> Toutes les boutiques</option>
+                        </select>
+                    </div>
+
+                    <!-- Cooldown Relance Automatique (Marque) -->
+                    <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                        <span style="font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.35rem;">
+                            Relance Automatique
+                            <span id="settings-save-status" style="font-size: 0.65rem; color: var(--success); font-weight: 700; display: none; text-transform: none; letter-spacing: normal;">✓ Enregistré !</span>
+                        </span>
+                        <select id="setting-cooldown-days" onchange="saveCommerceSettings()" class="commerce-select" 
+                            style="padding: 0.42rem 2.2rem 0.42rem 0.85rem; font-size: 0.82rem; border-radius: 9px; border-color: var(--border-color); font-weight: 600; min-width: 170px; background-color: #fafbfc; box-shadow: none;">
+                            <option value="30">⏳ 30 jours (Standard)</option>
+                            <option value="21">⏳ 3 semaines (21j)</option>
+                            <option value="14">⏳ 2 semaines (14j)</option>
+                            <option value="7">⏳ 1 semaine (7j)</option>
+                        </select>
+                    </div>
+
+                    <div class="stats-timestamp" style="align-self: flex-end; margin-bottom: 0.2rem;">
                         <span class="dot"></span>
                         Données en temps réel
                     </div>
@@ -1548,29 +1567,7 @@
                 </div>
             </div>
 
-            <!-- Paramètres de la boutique (cooldown anti-spam au niveau MARQUE) -->
-            <div id="commerce-settings-container" style="display: none; margin-bottom: 1.5rem; margin-top: 1rem;">
-                <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 16px; padding: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <div style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: rgba(99, 102, 241, 0.1); color: #6366f1; border-radius: 10px;">
-                            <i data-lucide="sliders" style="width: 18px; height: 18px;"></i>
-                        </div>
-                        <div>
-                            <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin: 0; font-family: 'Outfit', sans-serif;">⚙️ Fréquence de Relance Automatique (Marque)</h4>
-                            <p style="margin: 0; font-size: 0.78rem; color: var(--text-secondary);">Définissez le délai de relance minimum. Ce réglage s'applique à tous les points de vente de cette marque.</p>
-                        </div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <span id="settings-save-status" style="font-size: 0.75rem; color: var(--success); font-weight: 600; display: none;">Enregistré !</span>
-                        <select id="setting-cooldown-days" onchange="saveCommerceSettings()" class="commerce-select" style="padding: 0.42rem 2.2rem 0.42rem 0.75rem; font-size: 0.82rem; border-radius: 8px; border-color: var(--border-color); font-weight: 600;">
-                            <option value="30">⏳ 30 jours (Standard)</option>
-                            <option value="21">⏳ 3 semaines (21 jours)</option>
-                            <option value="14">⏳ 2 semaines (14 jours)</option>
-                            <option value="7">⏳ 1 semaine (7 jours)</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
+
 
             <!-- KPI Row 1 : Métriques RFM -->
             <div class="kpi-section-label">Métriques RFM</div>
@@ -3837,27 +3834,20 @@
          }
 
         async function fetchCommerceSettings(commerceId) {
-            const container = document.getElementById('commerce-settings-container');
             const select = document.getElementById('setting-cooldown-days');
-            if (!container || !select) return;
+            if (!select) return;
 
-            if (commerceId === '__all__') {
-                container.style.display = 'none';
-                return;
-            }
+            // Si c'est toutes les boutiques, on configure par défaut la marque 'commerce_local'
+            const targetId = commerceId === '__all__' ? 'commerce_local' : commerceId;
 
             try {
-                const res = await fetch(`/api/commerces/settings?commerce_id=${encodeURIComponent(commerceId)}`);
+                const res = await fetch(`/api/commerces/settings?commerce_id=${encodeURIComponent(targetId)}`);
                 const json = await res.json();
                 if (json.status === 'success' && json.data) {
                     select.value = json.data.cooldown_days || 30;
-                    container.style.display = 'flex';
-                } else {
-                    container.style.display = 'none';
                 }
             } catch (e) {
                 console.error('Erreur lors de la récupération des paramètres boutique:', e);
-                container.style.display = 'none';
             }
         }
 
@@ -3867,13 +3857,14 @@
             if (!select || !status) return;
 
             const days = parseInt(select.value, 10);
+            const targetId = currentCommerceId === '__all__' ? 'commerce_local' : currentCommerceId;
             
             try {
                 const res = await fetch('/api/commerces/settings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        commerce_id: currentCommerceId,
+                        commerce_id: targetId,
                         cooldown_days: days
                     })
                 });
