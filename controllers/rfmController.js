@@ -8,6 +8,20 @@ const COMMERCE_ID   = process.env.COMMERCE_ID   || 'commerce_local_1';
 const PYTHON_PATH   = process.env.PYTHON_PATH   || 'python';
 
 // ============================================================
+// 🧪 CONFIG MODE TEST : liste des emails autorisés en mode 5 minutes
+// Modifier cette liste pour ajouter/retirer des destinataires de test.
+// En mode production (7j/14j/21j/30j), ce filtre ne s'applique PAS.
+// ============================================================
+const TEST_MODE_EMAILS = [
+    'ghofrane.khadhar@gmail.com',
+    // Ajoutez un 2ème email de test ici si besoin :
+    // 'autre.email@exemple.com',
+];
+// Seuil de détection du mode test : cooldown_days ≤ cette valeur
+const TEST_MODE_THRESHOLD_DAYS = 0.01; // 0.01 jour = ~14 minutes
+
+
+// ============================================================
 // GET /api/data
 // Retourne tous les résultats RFM depuis la collection analyses_ia
 // triés par score_global_sa décroissant.
@@ -477,7 +491,32 @@ const runSmartAutomationInternal = async (commerceId) => {
     const tomorrowDay = tomorrow.getUTCDate();
     const tomorrowMonth = tomorrow.getUTCMonth();
 
-    for (const client of clients) {
+    // ============================================================
+    // 🧪 FILTRE MODE TEST : si cooldown ≤ 0.01j, limiter aux emails de test
+    // En mode production (7j/14j/21j/30j), tous les clients sont traités.
+    // ============================================================
+    const isTestMode = cooldownDays <= TEST_MODE_THRESHOLD_DAYS;
+    let clientsToProcess = clients;
+
+    if (isTestMode) {
+        const testEmailsSet = new Set(TEST_MODE_EMAILS.map(e => e.toLowerCase()));
+        const allEligible = clients.filter(c => (c.email || c.client_db_id));
+        clientsToProcess = allEligible.filter(c => {
+            const email = (c.email || c.client_db_id || '').toLowerCase();
+            return testEmailsSet.has(email);
+        });
+        const skippedCount = allEligible.length - clientsToProcess.length;
+        console.log(`🧪 [TEST MODE] Filtrage actif : envoi limité à ${clientsToProcess.length} client(s) de test (${TEST_MODE_EMAILS.join(', ')}) — ${skippedCount} autres clients éligibles ignorés pour ce cycle.`);
+
+        if (clientsToProcess.length === 0) {
+            console.warn(`🧪 [TEST MODE] Aucun client de test trouvé dans commerce "${commerceId}" — vérifiez que l'email est bien dans la base et la collection analyses_ia.`);
+            return { status: 'info', message: 'Mode test : aucun client de test trouvé dans ce commerce.', stats };
+        }
+    } else {
+        console.log(`⚙️ [PRODUCTION MODE] Traitement de ${clients.length} clients (cooldown: ${cooldownDays}j) — filtre test désactivé.`);
+    }
+
+    for (const client of clientsToProcess) {
         const clientEmail = client.email || client.client_db_id;
         if (!clientEmail) continue;
 
