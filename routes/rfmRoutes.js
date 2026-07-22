@@ -14,8 +14,22 @@ const {
     getReturnRate,
     getRecommendations,
     optOutRGPD,
+    optInRGPD,
     getCommerceSettings,
-    updateCommerceSettings
+    updateCommerceSettings,
+    triggerShopAnniversary,
+    getFraudAlerts,
+    getRGPDPortalToken,
+    getRGPDPortalData,
+    updateRGPDPortalData,
+    exportClientsCSV,
+    exportCampaignsCSV,
+    exportGlobalCSV,
+    exportDashboardCSV,
+    trackCampaignOpen,
+    getAdvancedCampaignStats,
+    getCampaignRecommendationsAI,
+    addCommande
 } = require('../controllers/rfmController');
 
 const {
@@ -66,16 +80,48 @@ router.post('/campaigns/trigger-automation', triggerSmartAutomation);
 // GET  /api/campaigns/automation-status  → Statut de l'automatisation en cours (polling)
 router.get('/campaigns/automation-status', getAutomationStatus);
 
+// GET  /api/campaigns/track/open/:trackingId → Pixel transparent de tracking d'ouverture
+router.get('/campaigns/track/open/:trackingId', trackCampaignOpen);
+
+// GET  /api/campaigns/advanced-stats → Statistiques avancées & attribution CA
+router.get('/campaigns/advanced-stats', getAdvancedCampaignStats);
+
+// GET  /api/campaigns/recommendations-ai → Recommandation stratégique IA de campagne
+router.get('/campaigns/recommendations-ai', getCampaignRecommendationsAI);
+
+// POST /api/commandes/add → Enregistrer une commande + invalider le cache des stats
+router.post('/commandes/add', addCommande);
+
 // GET  /api/recommendations              → Recommandations IA rule-based pour une boutique
 router.get('/recommendations', getRecommendations);
 
 // POST /api/rgpd/opt-out                 → Désactiver le ciblage marketing pour un client (RGPD)
 router.post('/rgpd/opt-out', optOutRGPD);
 
+// POST /api/rgpd/opt-in                  → Réactiver le ciblage marketing pour un client (RGPD)
+router.post('/rgpd/opt-in', optInRGPD);
+
 // GET  /api/commerces/settings           → Récupérer les paramètres d'un commerce
 router.get('/commerces/settings', getCommerceSettings);
 
 // POST /api/commerces/settings          → Enregistrer les paramètres d'un commerce
 router.post('/commerces/settings', updateCommerceSettings);
+
+// POST /api/campaigns/trigger-shop-anniversary → Déclencher manuellement la campagne anniversaire boutique
+router.post('/campaigns/trigger-shop-anniversary', triggerShopAnniversary);
+
+// ============================================================
+// 🔒 SÉCURITÉ & FRAUDE, EXPORTS CSV, PORTAIL RGPD LIBRE-SERVICE
+// ============================================================
+router.get('/security/fraud-alerts', getFraudAlerts);
+
+router.get('/rgpd/portal-token', getRGPDPortalToken);
+router.get('/rgpd/portal-data', getRGPDPortalData);
+router.post('/rgpd/portal-data', updateRGPDPortalData);
+
+router.get('/export/clients', exportClientsCSV);
+router.get('/export/campaigns', exportCampaignsCSV);
+router.get('/export/global', exportGlobalCSV);
+router.get('/export/dashboard', exportDashboardCSV);
 
 module.exports = router;

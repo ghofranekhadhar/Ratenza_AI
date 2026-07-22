@@ -77,9 +77,40 @@ def save_rfm_results(commerce_id: str, rfm_df: pd.DataFrame):
         records = rfm_df.to_dict(orient="records")
         now_str = datetime.utcnow().isoformat() + "Z"
         
+        # Check for RGPD profiling opt-out clients
+        rgpd_opt_out_emails = set()
+        try:
+            rgpd_cursor = db.clients.find({
+                "$or": [
+                    {"rgpd_opt_out": True},
+                    {"rgpd_opt_out_profiling": True}
+                ]
+            }, {"email": 1})
+            for c in rgpd_cursor:
+                if c.get("email"):
+                    rgpd_opt_out_emails.add(c["email"].lower().strip())
+        except Exception as rgpd_err:
+            logger.warning(f"Impossible de lire les opt-out RGPD : {rgpd_err}")
+
         for record in records:
             record["commerce_id"] = commerce_id
             record["date_analyse"] = now_str
+            
+            # Anonymisation / Neutralisation RGPD Profiling
+            email = record.get("email")
+            if email and email.lower().strip() in rgpd_opt_out_emails:
+                record["segment_gmm"] = "regular"
+                record["churn_score"] = 0.0
+                record["churn_risk_label"] = "Faible"
+                record["score_global_sa"] = 0.5
+                record["recency"] = 999
+                record["frequency"] = 1
+                record["monetary"] = 0.0
+                record["recency_score"] = 1
+                record["frequency_score"] = 1
+                record["monetary_score"] = 1
+                record["baisse_frequence_detectee"] = False
+                record["rgpd_opt_out_profiling"] = True
             
         # Nettoyage des anciennes analyses RFM pour ce commerce
         db.analyses_ia.delete_many({"commerce_id": commerce_id})

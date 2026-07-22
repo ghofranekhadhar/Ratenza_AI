@@ -42,10 +42,22 @@ if (isSmtpConfigured()) {
  * @param {string} options.subject - Objet de l'e-mail
  * @param {string} options.text - Corps de texte brut
  * @param {string} [options.html] - Corps au format HTML (optionnel)
+ * @param {string} [options.trackingId] - ID de tracking d'ouverture unique (optionnel)
  * @returns {Promise<{status: 'sent' | 'simulated', messageId?: string, info?: string}>}
  */
-const sendEmail = async ({ to, subject, text, html }) => {
+const sendEmail = async ({ to, subject, text, html, trackingId }) => {
     const from = process.env.EMAIL_FROM || '"Retenza AI" <contact@retenza.com>';
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
+
+    let finalHtml = html || text.replace(/\n/g, '<br>');
+    if (trackingId) {
+        const trackingPixel = `<img src="${backendUrl}/api/campaigns/track/open/${trackingId}" width="1" height="1" style="display:none;" alt="" />`;
+        if (finalHtml.includes('</body>')) {
+            finalHtml = finalHtml.replace('</body>', `${trackingPixel}</body>`);
+        } else {
+            finalHtml += trackingPixel;
+        }
+    }
 
     if (!isSmtpConfigured()) {
         console.log('');
@@ -53,6 +65,7 @@ const sendEmail = async ({ to, subject, text, html }) => {
         console.log(`   De           : ${from}`);
         console.log(`   Destinataire : <${to}>`);
         console.log(`   Sujet        : ${subject}`);
+        if (trackingId) console.log(`   Tracking ID  : ${trackingId}`);
         console.log(`   Contenu      :\n${text}`);
         console.log('📧 ────────────────────────────────────────────────────────');
         console.log('');
@@ -69,7 +82,7 @@ const sendEmail = async ({ to, subject, text, html }) => {
             to,
             subject,
             text,
-            html: html || text.replace(/\n/g, '<br>') // Fallback HTML automatique
+            html: finalHtml
         });
         console.log(`📧 [EMAIL SENT] E-mail envoyé avec succès à <${to}> (ID: ${info.messageId})`);
         return { 

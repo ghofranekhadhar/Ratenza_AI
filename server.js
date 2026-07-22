@@ -58,7 +58,7 @@ app.use((err, req, res, next) => {
 // ============================================================
 // Planificateur quotidien autonome d'envois marketing (IA)
 // ============================================================
-const { runSmartAutomationInternal } = require('./controllers/rfmController');
+const { runSmartAutomationInternal, sendShopAnniversaryCampaign } = require('./controllers/rfmController');
 const connectDB = require('./config/db');
 
 
@@ -140,6 +140,17 @@ function startAdaptiveScheduler() {
                 console.log(`⏰ [SCHEDULER] Lancement automatique pour le commerce : ${commerceId} à ${new Date().toLocaleString('fr-FR')}`);
                 const result = await runSmartAutomationInternal(commerceId);
                 console.log(`⏰ [SCHEDULER] Résultat pour ${commerceId} :`, result.message, result.stats);
+
+                // Campagnes anniversaire boutique (J-7, J-3, J-1) — indépendant du cooldown RFM
+                try {
+                    const db = await connectDB();
+                    const anniversaryResult = await sendShopAnniversaryCampaign(commerceId, db);
+                    if (anniversaryResult.status === 'success') {
+                        console.log(`🎂 [SCHEDULER] Anniversaire boutique pour ${commerceId} :`, anniversaryResult.stats);
+                    }
+                } catch (err) {
+                    console.error(`❌ [SCHEDULER] Erreur anniversaire boutique pour ${commerceId} :`, err.message);
+                }
             }
 
             // Marquer la date du jour comme "déjà traitée" si on a tourné en mode production
